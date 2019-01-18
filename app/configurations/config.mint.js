@@ -34,13 +34,13 @@ export default {
 
   title: 'Muoversi In Toscana',
 
-  availableLanguages: ['en'],
-  defaultLanguage: 'en',
+  availableLanguages: ['it', 'en'],
+  defaultLanguage: 'it',
 
-  favicon: './app/configurations/images/hsl/icon_favicon-reittiopas.svg',
+  favicon: './app/configurations/images/mint/favicon.ico',
 
   // Navbar logo
-  logo: 'hsl/reittiopas-logo.svg',
+  logo: 'mint/mint-logo.png',
 
   feedIds: ['HSL'],
 
