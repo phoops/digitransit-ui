@@ -4,3 +4,15 @@
 @import '../../main';
 
 @import 'icon';
+
+.top-bar .navi-logo {
+    margin-left: 0;
+    width: 600px;
+    height: 60px;
+    min-width: 130px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    /* background-position: left center; */
+    cursor: pointer;
+    /* background: #FFF; */
+}
