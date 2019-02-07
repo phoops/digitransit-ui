@@ -37,7 +37,7 @@ export default {
   availableLanguages: ['it', 'en'],
   defaultLanguage: 'it',
 
-  favicon: './app/configurations/images/mint/favicon.ico',
+  favicon: './app/configurations/images/mint/favicon.png',
 
   // Navbar logo
   logo: 'mint/mint-logo.png',
