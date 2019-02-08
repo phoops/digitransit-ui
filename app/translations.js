@@ -2714,7 +2714,7 @@ const translations = {
     'number-of-intermediate-stops':
       '{number, plural, =0 {No stops} una {1 stop} altre {{number} stops} }',
     'number-of-minutes':
-      '{number, plural, =0 {0 minutes} un {1 minute} altri {{number} minuti}}',
+      '{number, plural, =0 {0 minuti} un {1 minuto} altri {{number} minuti}}',
     'off-canvas-info':
       "Esegui l'accesso per salvare i tuoi preferiti e visualizzarli in altri dispositivi",
     'option-default': 'Predefinito',
@@ -2735,8 +2735,8 @@ const translations = {
     'pick-icon': 'Selezona icona',
     'pick-mode': 'Seleziona un mezzo di trasporto',
     'place-route-or-keyword': 'Destinazione, linea o fermata',
-    'platform-num': 'Piattaforma {platformCode}',
-    'platform-short': 'Plat. {platformCode}',
+    'platform-num': 'Binario {platformCode}',
+    'platform-short': 'Bin. {platformCode}',
 
     'prefer-walking': 'Preferenza di spostamento a piedi',
     preferred: 'Linee preferite',
@@ -2779,7 +2779,7 @@ const translations = {
     'route-saved-settings': 'Impostazioni salvate',
     'route-stop-or-keyword': 'Riguardo alla linea o alla fermata',
     routes: 'Linee',
-    'routes-platforms': 'Linee, piattaforme',
+    'routes-platforms': 'Linee',
     run: 'Corri',
     save: 'Salva',
     search: 'Cerca',
