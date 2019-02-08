@@ -2533,7 +2533,7 @@ const translations = {
     'all-routes': 'Tutti gli itinerari',
     'all-routes-disabled': 'Nessun itinerario',
     'approx-meters': '{approxDistance} m',
-    'arriving-at': 'Arrivo',
+    'arriving-at': 'Orario di arrivo',
     'arriving-soon': 'Ora',
     'avoid-transfers': 'Evita trasferimenti',
     'avoid-walking': 'Evita gli spostamenti a piedi',
@@ -2648,7 +2648,7 @@ const translations = {
     'journeyplanner.title': 'Muoversi in Toscana - Travel Planner',
     later: 'Dopo',
     leaves: 'Parte',
-    'leaving-at': 'Parte alle',
+    'leaving-at': 'Orario di partenza',
     'likely-to-recommend':
       'Consiglieresti il nostro servizio ad amici e colleghi?',
     'likely-to-use':
