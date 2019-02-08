@@ -34,24 +34,20 @@ class LocationPopup extends React.Component {
 
   componentDidMount() {
     const language = this.context.getStore('PreferencesStore').getLanguage();
-    getJson(this.context.config.URL.PELIAS_REVERSE_GEOCODER, {
-      'point.lat': this.props.lat,
-      'point.lon': this.props.lon,
-      'boundary.circle.lat': this.props.lat,
-      'boundary.circle.lon': this.props.lon,
-      'boundary.circle.radius': 0.1, // 100m
-      lang: language,
-      size: 1,
-      layers: 'address',
-    }).then(
+    const reverseGeocodingUrl = this.context.config.URL.MAPBOX
+      + '/' + this.props.lon + ',' + this.props.lat + '.json?'
+      + 'language=' + language
+      + '&access_token=' + this.context.config.MAPBOX_ACCESS_TOKEN;
+
+    getJson(reverseGeocodingUrl).then(
       data => {
         if (data.features != null && data.features.length > 0) {
-          const match = data.features[0].properties;
+          const match = data.features[0].place_name;
           this.setState({
             loading: false,
             location: {
               ...this.state.location,
-              address: getLabel(match),
+              address: match,
             },
           });
         } else {
