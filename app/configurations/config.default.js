@@ -350,12 +350,12 @@ export default {
     },
 
     subway: {
-      availableForSelection: true,
-      defaultValue: true,
+      availableForSelection: false,
+      defaultValue: false,
     },
 
     airplane: {
-      availableForSelection: true,
+      availableForSelection: false,
       defaultValue: true,
     },
 
