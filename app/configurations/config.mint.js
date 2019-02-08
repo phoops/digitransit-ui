@@ -18,7 +18,12 @@ export default {
     MAP: {
       default: `${MAP_URL}`
     },
+    MAPBOX: 'https://api.mapbox.com/geocoding/v5/mapbox.places'
   },
+
+  MAPBOX_TUSCANY_BOUNDARIES: '9.651662,42.424519,12.317661,44.499167',
+
+  MAPBOX_ACCESS_TOKEN: 'pk.eyJ1IjoicGhvb3BzLW1hcGJveCIsImEiOiJjamM2ZWtzdnExNG9pMnFxbWV4ZXpoNjZ5In0.65trvqRy8RINZocVaFZYJg',
 
   map: {
     useRetinaTiles: true,

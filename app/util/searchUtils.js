@@ -15,6 +15,8 @@ import { uniqByLabel, isStop } from './suggestionUtils';
 import mapPeliasModality from './pelias-to-modality-mapper';
 import { PREFIX_ROUTES } from '../util/path';
 
+import mapboxToPeliasFeaturs from './mapbox-to-pelias-features';
+
 /**
  * LayerType depicts the type of the point-of-interest.
  */
@@ -302,6 +304,42 @@ export function getGeocodingResult(
   return getJson(config.URL.PELIAS, opts).then(response =>
     mapPeliasModality(response.features, config),
   );
+}
+
+export function getMapboxGeocodingResult(
+  _text,
+  focusPoint,
+  config
+) {
+  const text = _text ? _text : null;
+  if (
+    text === undefined ||
+    text === null ||
+    text.length < 1 ||
+    (config.search &&
+      config.search.minimalRegexp &&
+      !config.search.minimalRegexp.test(text))
+  ) {
+    return Promise.resolve([]);
+  }
+  if (!focusPoint.lat) {
+    focusPoint.lat = config.defaultMapCenter.lat;
+  }
+  if (!focusPoint.lon) {
+    focusPoint.lon = config.defaultMapCenter.lon;
+  }
+  const opts = {
+    country: "it",
+    language: "it",
+    proximity: focusPoint.lon + "," + focusPoint.lat,
+    bbox: config.MAPBOX_TUSCANY_BOUNDARIES,
+    access_token: config.MAPBOX_ACCESS_TOKEN,
+  }
+  const urlMapbox = config.URL.MAPBOX + '/' + text + '.json?' + buildQueryString(opts);
+  return getJson(urlMapbox).then(response => 
+    mapboxToPeliasFeaturs(response.features),
+  );
+
 }
 
 function getFavouriteRoutes(favourites, input) {
@@ -663,14 +701,15 @@ export function executeSearchImmediate(
       const sources = get(config, 'searchSources', '').join(',');
 
       searchComponents.push(
-        getGeocodingResult(
-          input,
-          config.searchParams,
-          language,
-          focusPoint,
-          sources,
-          config,
-        ),
+        // getGeocodingResult(
+        //   input,
+        //   config.searchParams,
+        //   language,
+        //   focusPoint,
+        //   sources,
+        //   config,
+        // ),
+        getMapboxGeocodingResult(input, focusPoint, config),
       );
     }
 
@@ -689,14 +728,15 @@ export function executeSearchImmediate(
 
       if (sources) {
         searchComponents.push(
-          getGeocodingResult(
-            input,
-            undefined,
-            language,
-            focusPoint,
-            sources,
-            config,
-          ),
+          // getGeocodingResult(
+          //   input,
+          //   undefined,
+          //   language,
+          //   focusPoint,
+          //   sources,
+          //   config,
+          // ),
+          getMapboxGeocodingResult(input, focusPoint, config),
         );
       }
     }
@@ -811,3 +851,15 @@ export const withCurrentTime = (getStore, location) => {
     },
   };
 };
+
+function buildQueryString(params) {
+  let queryString = "";
+  for (const key in params) {
+      if (params.hasOwnProperty(key)) {
+          queryString += key + "=" + params[key] + "&";
+      }
+  }
+
+  return encodeURI(queryString.slice(0, -1));
+}
+
