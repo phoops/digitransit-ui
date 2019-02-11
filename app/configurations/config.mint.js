@@ -86,14 +86,14 @@ export default {
 
   appBarLink: { name: 'Regione Toscana', href: 'http://www.regione.toscana.it/' },
 
-  nationalServiceLink: { name: 'matka.fi', href: 'https://opas.matka.fi/' },
+  nationalServiceLink: { name: 'Regione Toscana', href: 'http://www.regione.toscana.it/' },
 
   agency: {
     show: false,
   },
 
   socialMedia: {
-    title: 'Uusi Reittiopas',
+    title: 'Muoversi In Toscana',
     description: APP_DESCRIPTION,
 
     image: {
@@ -323,19 +323,12 @@ export default {
     ],
   },
 
-  showTicketInformation: true,
+  showTicketInformation: false,
   ticketLink: 'https://www.hsl.fi/liput-ja-hinnat',
-  showTicketSelector: true,
+  showTicketSelector: false,
 
   fares: [
-    'HSL:hki',
-    'HSL:esp',
-    'HSL:van',
-    'HSL:ker',
-    'HSL:kir',
-    'HSL:seu',
-    'HSL:lse',
-    'HSL:kse',
+    
   ],
 
   // mapping (string, lang) from OTP fare identifiers to human readable form
