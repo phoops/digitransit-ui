@@ -85,7 +85,7 @@ function RouteNumber(props, context) {
           <div className="bar-container">
             <div
               style={{
-                color: mode === 'call' ? 'white' : color || 'currentColor',
+                color: mode === 'call' ? 'white' : 'currentColor',
               }}
               className={cx('bar', mode)}
             >

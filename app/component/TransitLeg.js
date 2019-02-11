@@ -45,9 +45,7 @@ class TransitLeg extends React.Component {
       const stopList = this.props.leg.intermediatePlaces.map(place => (
         <IntermediateLeg
           color={
-            this.props.leg.route
-              ? `#${this.props.leg.route.color}`
-              : 'currentColor'
+            'currentColor'
           }
           key={place.stop.gtfsId}
           mode={this.props.mode}
