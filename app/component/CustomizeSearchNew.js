@@ -148,7 +148,7 @@ class CustomizeSearch extends React.Component {
               defaultSettings={this.defaultSettings}
             />
           </div>
-          {config.showTicketSelector && (
+          {/* {config.showTicketSelector && (
             <FareZoneSelector
               headerText={intl.formatMessage({
                 id: 'zones',
@@ -193,7 +193,7 @@ class CustomizeSearch extends React.Component {
               }
               title="accessibility"
             />
-          </div>
+          </div> */}
           <div className="settings-option-container save-controls-container">
             <div style={{ display: 'flex' }}>
               <SaveCustomizedSettingsButton
