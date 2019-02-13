@@ -2712,9 +2712,9 @@ const translations = {
     'no-trips-found': 'Non sono state trovate soluzioni per la data selezionata',
     now: 'Ora',
     'number-of-intermediate-stops':
-      '{number, plural, =0 {No stops} una {1 stop} altre {{number} stops} }',
+      '{number, plural, =0 {No stops} one {1 fermata} other {{number} fermate} }',
     'number-of-minutes':
-      '{number, plural, =0 {0 minuti} un {1 minuto} altri {{number} minuti}}',
+      '{number, plural, =0 {0 minuti} one {1 minuto} other {{number} minuti}}',
     'off-canvas-info':
       "Esegui l'accesso per salvare i tuoi preferiti e visualizzarli in altri dispositivi",
     'option-default': 'Predefinito',
