@@ -82,7 +82,7 @@ export default {
     primary: '#E2001A',
   },
 
-  sprites: 'svg-sprite.hsl.svg',
+  sprites: 'svg-sprite.mint.svg',
 
   appBarLink: { name: 'Regione Toscana', href: 'http://www.regione.toscana.it/' },
 

@@ -6,6 +6,7 @@
 /* Operator palette */
 $mint-red: #E2001A;
 $mint-dark-red: #BE2126;
+$mint-yellow: #ffc324;
 $hsl-blue: #007ac9;
 $hsl-dark-blue: #0062a1;
 $hsl-pink: #f092cd;
@@ -18,10 +19,12 @@ $hsl-ferry-blue: #00b9e4;
 /* Application palette */
 $primary-color: $mint-red;
 $secondary-color: $mint-dark-red;
-$favourite-color: $hsl-pink;
-$hilight-color: $hsl-pink;
-$action-color: $hsl-blue;
+$favourite-color: $mint-yellow;
+$hilight-color: $mint-yellow;
+$action-color: $mint-red;
 $current-location-color: $hsl-tram-green;//#F653B9;
+
+$to-color: $mint-dark-red;
 
 /* Component palette */
 $standalone-btn-color: $primary-color;
@@ -32,10 +35,10 @@ $link-color: $primary-color;
 
 /* Vehicle palette */
 $airplane-color: #0046ad;
-$bus-color: $hsl-blue;
+$bus-color: #FF9A02;
 $tram-color: $hsl-tram-green;
 $metro-color: $hsl-metro-orange;
-$rail-color: $hsl-rail-red;
+$rail-color: $mint-dark-red/*$hsl-rail-red*/;
 $ferry-color: $hsl-ferry-blue;
 
 /* Fonts */
