@@ -102,7 +102,7 @@ function StopPageTabContainer({
               </div>
             </div>
           </Link>
-          <Link
+          {/* <Link
             to={`${urlBase}/${Tab.Disruptions}`}
             className={cx('stop-tab-singletab', {
               active: activeTab === Tab.Disruptions,
@@ -116,7 +116,7 @@ function StopPageTabContainer({
                 <FormattedMessage id="disruptions" />
               </div>
             </div>
-          </Link>
+          </Link> */}
         </div>
         <div className="stop-tabs-fillerline" />
       </div>
