@@ -18,7 +18,7 @@
 }
 
 .desktop-title {
-    background: $mint-dark;
+    background: #515258;
 }
 
 .top-bar.bp-large {
@@ -32,4 +32,8 @@
 
 .navi-languages #lang-select .lang.selected {
     background: $mint-red;
+}
+
+.long {
+    font-size: 14px;
 }
