@@ -180,7 +180,7 @@ class RoutePage extends React.Component {
                 <FormattedMessage id="timetable" defaultMessage="Timetable" />
               </div>
             </a>
-            <a
+            {/* <a
               className={cx({
                 activeAlert: hasActiveAlert,
                 'is-active': activeTab === Tab.Disruptions,
@@ -196,7 +196,7 @@ class RoutePage extends React.Component {
                   defaultMessage="Disruptions"
                 />
               </div>
-            </a>
+            </a> */}
             <FavouriteRouteContainer
               className="route-page-header"
               gtfsId={route.gtfsId}
