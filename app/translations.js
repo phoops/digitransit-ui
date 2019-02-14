@@ -2816,7 +2816,7 @@ const translations = {
     'splash-use-positioning': 'Usa i servizi di localzzazione',
     'splash-welcome': 'Come vorresti inziare?',
     'splash-you-can-also': 'o',
-    stop: 'Fermaya',
+    stop: 'Fermata',
     'stop-number': 'Numero fermata',
     'stop-page.description': 'Fermata {stop_name} - {stop_code}',
     'stop-page.title': 'Fermata {stop_name} - {stop_code}',
