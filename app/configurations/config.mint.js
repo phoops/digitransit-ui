@@ -89,7 +89,7 @@ export default {
   nationalServiceLink: { name: 'Regione Toscana', href: 'http://www.regione.toscana.it/' },
 
   agency: {
-    show: false,
+    show: true,
   },
 
   socialMedia: {
@@ -219,7 +219,7 @@ export default {
 
   footer: {
     content: [
-      { label: `© HSL ${YEAR}` },
+      { label: `© Regione Toscana ${YEAR}` },
       {},
       {
         name: 'footer-faq',
