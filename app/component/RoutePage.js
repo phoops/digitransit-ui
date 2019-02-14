@@ -155,7 +155,8 @@ class RoutePage extends React.Component {
               <RouteNumber
                 color={route.color ? `#${route.color}` : null}
                 mode={route.mode}
-                text={route.shortName}
+                text={route.shortName ? route.shortName : route.longName}
+                textClass={route.shortName ? '' : 'extra-small'}
               />
             )}
             <a

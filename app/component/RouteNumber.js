@@ -17,6 +17,7 @@ function RouteNumber(props, context) {
   }
 
   const longText = props.text && props.text.length >= LONG_ROUTE_NUMBER_LENGTH;
+  const textClass = props.textClass ? props.textClass : '';
 
   const icon = (isCallAgency, hasDisruption, badgeFill, badgeText) => {
     if (isCallAgency) {
@@ -103,7 +104,7 @@ function RouteNumber(props, context) {
         ) : (
           <div className="vehicle-number-container-v">
             <span
-              className={cx('vehicle-number', mode, {
+              className={cx('vehicle-number', mode, textClass, {
                 'overflow-fade': longText && props.fadeLong,
                 long: longText,
               })}
@@ -177,6 +178,7 @@ RouteNumber.propTypes = {
   mode: PropTypes.string.isRequired,
   text: PropTypes.node,
   vertical: PropTypes.bool,
+  textClass: PropTypes.string,
   className: PropTypes.string,
   hasDisruption: PropTypes.bool,
   fadeLong: PropTypes.bool,
@@ -194,6 +196,7 @@ RouteNumber.defaultProps = {
   hasDisruption: false,
   fadeLong: false,
   text: '',
+  textClass: '',
   withBar: false,
   isCallAgency: false,
 };
