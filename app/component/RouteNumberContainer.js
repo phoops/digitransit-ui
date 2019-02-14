@@ -22,7 +22,6 @@ const RouteNumberContainer = (
     <RouteNumber
       className={className}
       isCallAgency={isCallAgency || route.type === 715}
-      color={route.color ? `#${route.color}` : null}
       hasDisruption={props.hasDisruption}
       mode={route.mode}
       text={getText(route, config)}

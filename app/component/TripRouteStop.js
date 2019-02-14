@@ -45,11 +45,10 @@ const TripRouteStop = props => {
           xmlns="http://www.w3.org/2000/svg"
           width={15}
           height={30}
-          style={{ fill: props.color, stroke: props.color }}
         >
           <circle
             strokeWidth="2"
-            stroke={props.color || 'currentColor'}
+            stroke="currentColor"
             fill="white"
             cx="6"
             cy="13"

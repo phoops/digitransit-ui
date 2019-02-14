@@ -139,11 +139,7 @@ class TransitLeg extends React.Component {
             </div>
             <RouteNumber //  shouldn't this be a route number container instead???
               mode={this.props.mode.toLowerCase()}
-              color={
-                this.props.leg.route
-                  ? `#${this.props.leg.route.color}`
-                  : 'currentColor'
-              }
+              color="currentColor"
               text={this.props.leg.route && this.props.leg.route.shortName}
               realtime={this.props.leg.realTime}
               vertical
@@ -154,17 +150,11 @@ class TransitLeg extends React.Component {
         <ItineraryCircleLine
           index={this.props.index}
           modeClassName={modeClassName}
-          color={
-            this.props.leg.route
-              ? `#${this.props.leg.route.color}`
-              : 'currentColor'
-          }
+          color="currentColor"
         />
         <div
           style={{
-            color: this.props.leg.route
-              ? `#${this.props.leg.route.color}`
-              : 'currentColor',
+            color: 'currentColor',
           }}
           onClick={this.props.focusAction}
           className={`small-9 columns itinerary-instruction-column ${firstLegClassName} ${modeClassName}`}

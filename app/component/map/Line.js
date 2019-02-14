@@ -16,7 +16,7 @@ export default class Line extends React.Component {
   static propTypes = {
     thin: PropTypes.bool,
     passive: PropTypes.bool,
-    color: PropTypes.string,
+
     mode: PropTypes.string.isRequired,
     geometry: PropTypes.array.isRequired,
   };
@@ -93,7 +93,7 @@ export default class Line extends React.Component {
           }}
           positions={filteredPoints}
           className={`leg ${className}`}
-          color={color}
+          color="currentColor"
           weight={legWeight}
           interactive={false}
         />

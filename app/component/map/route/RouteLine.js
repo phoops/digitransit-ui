@@ -59,9 +59,6 @@ function RouteLine(props) {
       {objs}
       <Line
         key="line"
-        color={
-          props.pattern.route.color ? `#${props.pattern.route.color}` : null
-        }
         geometry={props.pattern.geometry || props.pattern.stops}
         mode={modeClass}
         thin={props.thin}
@@ -109,7 +106,6 @@ export default Relay.createContainer(RouteLine, {
         }
         route {
           mode
-          color
         }
         stops {
           lat

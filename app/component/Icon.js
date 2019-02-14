@@ -60,7 +60,6 @@ function Icon(props) {
       <svg
         id={props.id}
         style={{
-          fill: props.color ? props.color : null,
           pointerEvents: props.pointerEvents ? 'auto' : 'none',
         }}
         viewBox={props.viewBox}
@@ -77,7 +76,6 @@ Icon.propTypes = {
   badgeFill: PropTypes.string,
   badgeText: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   className: PropTypes.string,
-  color: PropTypes.string,
   id: PropTypes.string,
   img: PropTypes.string.isRequired,
   pointerEvents: PropTypes.bool,
@@ -88,7 +86,6 @@ Icon.defaultProps = {
   badgeFill: undefined,
   badgeText: undefined,
   className: undefined,
-  color: undefined,
   id: undefined,
   pointerEvents: false,
   viewBox: '0 0 40 40',

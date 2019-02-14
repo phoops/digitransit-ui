@@ -183,7 +183,7 @@ export default Relay.createContainer(ItinerarySummaryListContainer, {
           route {
             mode
             shortName
-            color
+            longName
             agency {
               name
             }

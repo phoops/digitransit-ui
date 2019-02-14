@@ -121,11 +121,6 @@ class TripStopListContainer extends React.PureComponent {
           stoptime={stoptime}
           stop={stoptime.stop}
           mode={mode}
-          color={
-            this.props.trip.route && this.props.trip.route.color
-              ? `#${this.props.trip.route.color}`
-              : null
-          }
           vehicles={vehicleStops[stoptime.stop.gtfsId]}
           selectedVehicle={vehicle}
           stopPassed={stopPassed}
@@ -186,7 +181,6 @@ export default Relay.createContainer(
         route {
           mode
           gtfsId
-          color
         }
         pattern {
           code

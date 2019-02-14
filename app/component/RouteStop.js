@@ -106,11 +106,11 @@ class RouteStop extends React.PureComponent {
             xmlns="http://www.w3.org/2000/svg"
             width={15}
             height={30}
-            style={{ fill: color, stroke: color }}
+            style={{ fill: 'currentColor', stroke: 'currentColor' }}
           >
             <circle
               strokeWidth="2"
-              stroke={color || 'currentColor'}
+              stroke="currentColor"
               fill="white"
               cx="6"
               cy="13"

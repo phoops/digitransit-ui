@@ -11,7 +11,6 @@ const LONG_ROUTE_NUMBER_LENGTH = 6;
 
 function RouteNumber(props, context) {
   let mode = props.mode.toLowerCase();
-  const { color } = props;
 
   if (mode === 'bicycle' || mode === 'car') {
     mode += '-withoutBox';
@@ -23,7 +22,6 @@ function RouteNumber(props, context) {
     if (isCallAgency) {
       return (
         <IconWithIcon
-          color={color}
           className={`${mode} call`}
           img={`icon-icon_${mode}`}
           subIcon="icon-icon_call"
@@ -34,7 +32,6 @@ function RouteNumber(props, context) {
     if (hasDisruption) {
       return (
         <IconWithBigCaution
-          color={color}
           className={mode}
           img={`icon-icon_${mode}`}
         />
@@ -45,7 +42,6 @@ function RouteNumber(props, context) {
       <IconWithIcon
         badgeFill={badgeFill}
         badgeText={badgeText}
-        color={color}
         className={mode}
         img={`icon-icon_${mode}`}
         subIcon=""
@@ -85,7 +81,7 @@ function RouteNumber(props, context) {
           <div className="bar-container">
             <div
               style={{
-                color: mode === 'call' ? 'white' : 'currentColor',
+                color: mode === 'call' ? 'white' : null,
               }}
               className={cx('bar', mode)}
             >
@@ -97,7 +93,6 @@ function RouteNumber(props, context) {
       {props.text &&
         (props.vertical === false ? (
           <span
-            style={{ color: props.color ? props.color : null }}
             className={cx('vehicle-number', mode, {
               'overflow-fade': longText && props.fadeLong,
               long: longText,
@@ -108,7 +103,6 @@ function RouteNumber(props, context) {
         ) : (
           <div className="vehicle-number-container-v">
             <span
-              style={{ color: props.color ? props.color : null }}
               className={cx('vehicle-number', mode, {
                 'overflow-fade': longText && props.fadeLong,
                 long: longText,
@@ -181,7 +175,6 @@ RouteNumber.description = () => (
 
 RouteNumber.propTypes = {
   mode: PropTypes.string.isRequired,
-  color: PropTypes.string,
   text: PropTypes.node,
   vertical: PropTypes.bool,
   className: PropTypes.string,

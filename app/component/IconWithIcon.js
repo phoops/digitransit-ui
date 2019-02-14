@@ -18,7 +18,6 @@ const IconWithIcon = (
     img,
     subIcon,
     subIconClassName,
-    color,
     badgeFill,
     badgeText,
   },
@@ -29,7 +28,6 @@ const IconWithIcon = (
       <Icon
         badgeFill={badgeFill}
         badgeText={badgeText}
-        color={color}
         img={img}
       />
     </span>
@@ -86,7 +84,6 @@ IconWithIcon.propTypes = {
   img: PropTypes.string.isRequired,
   subIcon: PropTypes.string,
   subIconClassName: PropTypes.string,
-  color: PropTypes.string,
   badgeFill: PropTypes.string,
   badgeText: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
