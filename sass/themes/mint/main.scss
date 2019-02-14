@@ -16,3 +16,20 @@
     cursor: pointer;
     /* background: #FFF; */
 }
+
+.desktop-title {
+    background: $mint-dark;
+}
+
+.top-bar.bp-large {
+    background: $mint-dark;
+ }
+
+ .external-link-container {
+    border: 1px solid rgba(0, 0, 0, 0.70);
+    border-radius: 4px;
+}
+
+.navi-languages #lang-select .lang.selected {
+    background: $mint-red;
+}

@@ -4,7 +4,7 @@
 @import '../default/theme';
 
 /* Operator palette */
-$mint-red: #E2001A;
+$mint-red: #E91A22 /*#E2001A*/;
 $mint-dark-red: #BE2126;
 $mint-yellow: #ffc324;
 $hsl-blue: #007ac9;
@@ -15,6 +15,7 @@ $hsl-tram-green: #00985f;
 $hsl-metro-orange: #ff6319;
 $hsl-rail-red: #8c4799;
 $hsl-ferry-blue: #00b9e4;
+$mint-dark: #35363A;
 
 /* Application palette */
 $primary-color: $mint-red;
@@ -50,4 +51,4 @@ $font-size-medium-large: 1rem;
 $font-family-narrow: "Gotham XNarrow SSm A","Gotham XNarrow SSm B", Arial, Georgia, Serif;
 
 /* Spinner */
-$spinner-image: url('hsl-spinner.png');
+$spinner-image: url('mint-spinner.png');
