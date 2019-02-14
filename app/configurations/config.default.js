@@ -633,6 +633,7 @@ export default {
   staticMessages: [],
 
   themeMap: {
+    mint: 'mint',
     hsl: 'reittiopas',
     turku: '(turku|foli)',
     lappeenranta: 'lappeenranta',

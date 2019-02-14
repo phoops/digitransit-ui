@@ -2,7 +2,7 @@ const CONFIG = 'mint';
 const API_URL = process.env.API_URL || 'https://dev-api.digitransit.fi';
 const MAP_URL =
   process.env.MAP_URL || 'https://maps.wikimedia.org/osm-intl/';
-const APP_DESCRIPTION = 'Muoversi In Toscana web - beta';
+const APP_DESCRIPTION = 'Muoversi In Toscana - Travel Planner';
 const YEAR = 1900 + new Date().getYear();
 
 export default {
@@ -45,7 +45,7 @@ export default {
   favicon: './app/configurations/images/mint/favicon.png',
 
   // Navbar logo
-  logo: 'mint/mint-logo.png',
+  logo: 'mint/mint-dark.png',
 
   feedIds: ['HSL'],
 
