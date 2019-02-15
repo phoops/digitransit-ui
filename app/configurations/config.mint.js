@@ -4,6 +4,7 @@ const MAP_URL =
   process.env.MAP_URL || 'https://maps.wikimedia.org/osm-intl/';
 const APP_DESCRIPTION = 'Muoversi In Toscana - Travel Planner';
 const YEAR = 1900 + new Date().getYear();
+const APP_PATH = process.env.APP_CONTEXT || '';
 
 export default {
   CONFIG,
@@ -14,7 +15,7 @@ export default {
     // CITYBIKE_MAP: `${MAP_URL}/map/v1/hsl-citybike-map/`,
     // PARK_AND_RIDE_MAP: `${MAP_URL}/map/v1/hsl-parkandride-map/`,
     // TICKET_SALES_MAP: `${MAP_URL}/map/v1/hsl-ticket-sales-map/`,
-    FONT: 'https://cloud.typography.com/6364294/7572592/css/fonts.css',
+    FONT: 'https://fonts.googleapis.com/css?family=Roboto|Roboto+Condensed',
     MAP: {
       default: `${MAP_URL}`
     },
@@ -37,12 +38,13 @@ export default {
     default: 'Muoversi In Toscana',
   },
 
+  APP_PATH: `${APP_PATH}`,
   title: 'Muoversi In Toscana',
 
   availableLanguages: ['it', 'en'],
   defaultLanguage: 'it',
 
-  favicon: './app/configurations/images/mint/favicon.png',
+  favicon: './app/configurations/images/mint/favicon.ico',
 
   // Navbar logo
   logo: 'mint/mint-dark.png',
@@ -149,7 +151,7 @@ export default {
 
   modesWithNoBike: ['BUS', 'TRAM'],
   
-  useSearchPolygon: true,
+  useSearchPolygon: false,
 
   areaPolygon: [
     [25.5345, 60.2592],
@@ -220,57 +222,45 @@ export default {
   footer: {
     content: [
       { label: `© Regione Toscana ${YEAR}` },
-      {},
       {
-        name: 'footer-faq',
-        nameEn: 'FAQ',
-        href: 'https://www.hsl.fi/ohjeita-ja-tietoja/reittiopas',
+        name: 'accessibility',
+        nameEn: 'Accessibility',
+        href: 'http://www.regione.toscana.it/accessibilita'
       },
       {
-        name: 'footer-feedback',
-        nameEn: 'Submit feedback',
-        href: 'https://www.hsl.fi/palaute',
-        icon: 'icon-icon_speech-bubble',
+        name: 'legal-notes',
+        nameEn: 'Legal notes',
+        href: 'http://www.regione.toscana.it/notelegali'
       },
       {
-        name: 'about-this-service',
-        nameEn: 'About the service',
-        route: '/tietoja-palvelusta',
-        icon: 'icon-icon_info',
+        name: 'transparent-administration',
+        nameEn: 'Transparent administration',
+        href: 'http://www.regione.toscana.it/regione/amministrazione-trasparente',
       },
       {
-        name: 'footer-link-to-privacy-policy',
-        nameEn: 'Privacy policy',
-        href: 'https://www.hsl.fi/tietoa-sivustosta',
+        name: 'legal-advertising',
+        nameEn: 'Legal advertising',
+        href: 'http://www.regione.toscana.it/pubblicita-legale',
+      },
+      {
+        name: 'privacy',
+        nameEn: 'Privacy',
+        href: 'http://www.regione.toscana.it/privacy',
+      },
+      {
+        name: 'web-editorial-board',
+        nameEn: 'Web editorial board',
+        href: 'http://www.regione.toscana.it/redazioneweb',
       },
     ],
   },
 
   defaultEndpoint: {
-    address: 'Rautatieasema, Helsinki',
-    lat: 60.1710688,
-    lon: 24.9414841,
+    
   },
 
   defaultOrigins: [
-    {
-      icon: 'icon-icon_rail',
-      label: 'Rautatieasema, Helsinki',
-      lat: 60.1710688,
-      lon: 24.9414841,
-    },
-    {
-      icon: 'icon-icon_airplane',
-      label: 'Lentoasema, Vantaa',
-      lat: 60.317429,
-      lon: 24.9690395,
-    },
-    {
-      icon: 'icon-icon_bus',
-      label: 'Kampin bussiterminaali, Helsinki',
-      lat: 60.16902,
-      lon: 24.931702,
-    },
+    
   ],
 
   redirectReittiopasParams: true,
@@ -318,6 +308,21 @@ export default {
         header: 'Data sources',
         paragraphs: [
           'Maps, streets, buildings, stop locations etc. are provided by © OpenStreetMap contributors. Address data is retrieved from the Building and Dwelling Register of the Finnish Population Register Center. Public transport routes and timetables are based on JORE data of HSL.',
+        ],
+      },
+    ],
+
+    it: [
+      {
+        header: 'Informazioni sul servizio',
+        paragraphs: [
+          'Benvenuto nel travel planner di Muoversi In Toscana! Il travel planner ti aiuta a dirigerti verso la tua destinazione in modo semplice e veloce utlizzando il trasporto della Toscana. Il travel planner è fornito da Regione Toscana ed è basato sulla piattaforma Digitransit.',
+        ],
+      },
+      {
+        header: 'Data sources',
+        paragraphs: [
+          'Le mappe, le informazioni sulle strade e sugli indirizzi sono fornite da © OpenStreetMap e Mapbox. Le informazioni sul trasporto pubblico sono fornite da Regione Toscana.',
         ],
       },
     ],
