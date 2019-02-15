@@ -9,7 +9,7 @@ export default {
   CONFIG,
 
   URL: {
-    OTP: process.env.OTP_URL || `http://localhost:8888/otp/routers/toscana/`,
+    OTP: process.env.OTP_URL || `https://www-stg.muoversintoscana.it/gw/otp/routers/toscana/`,
     // STOP_MAP: `${MAP_URL}/map/v1/hsl-stop-map/`,
     // CITYBIKE_MAP: `${MAP_URL}/map/v1/hsl-citybike-map/`,
     // PARK_AND_RIDE_MAP: `${MAP_URL}/map/v1/hsl-parkandride-map/`,
@@ -65,12 +65,12 @@ export default {
   itineraryFiltering: 2.5, // drops 40% worse routes
 
   parkAndRide: {
-    showParkAndRide: true,
+    showParkAndRide: false,
     parkAndRideMinZoom: 14,
   },
 
   ticketSales: {
-    showTicketSales: true,
+    showTicketSales: false,
     ticketSalesMinZoom: 16,
   },
 
