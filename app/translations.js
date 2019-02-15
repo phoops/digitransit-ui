@@ -866,6 +866,13 @@ const translations = {
     yesterday: 'Yesterday',
     'your-favourites': 'Favorites',
     zones: 'Fare zones',
+
+    'accessibility': 'Accessibility',
+    'legal-notes': 'Legal notes',
+    'transparent-administration': 'Transparent administation',
+    'legal advertising': 'Legal advertising',
+    'privacy': 'Privacy',
+    'web-editorial-board': 'Web editorial board'
   },
 
   es: {
@@ -2881,6 +2888,13 @@ const translations = {
     yesterday: 'Ieri',
     'your-favourites': 'Preferiti',
     zones: 'Fare zones',
+    
+    'accessibility': 'Accessibilità',
+    'legal-notes': 'Note legali',
+    'transparent-administration': 'Amministrazione trasparente',
+    'legal advertising': 'Pubblicità legale',
+    'privacy': 'Privacy',
+    'web-editorial-board': 'Redazione web'
   },
 
   
