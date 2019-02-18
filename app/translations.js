@@ -870,7 +870,7 @@ const translations = {
     'accessibility': 'Accessibility',
     'legal-notes': 'Legal notes',
     'transparent-administration': 'Transparent administation',
-    'legal advertising': 'Legal advertising',
+    'legal-advertising': 'Legal advertising',
     'privacy': 'Privacy',
     'web-editorial-board': 'Web editorial board'
   },
@@ -2892,7 +2892,7 @@ const translations = {
     'accessibility': 'Accessibilità',
     'legal-notes': 'Note legali',
     'transparent-administration': 'Amministrazione trasparente',
-    'legal advertising': 'Pubblicità legale',
+    'legal-advertising': 'Pubblicità legale',
     'privacy': 'Privacy',
     'web-editorial-board': 'Redazione web'
   },
