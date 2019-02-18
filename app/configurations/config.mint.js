@@ -88,7 +88,7 @@ export default {
 
   appBarLink: { name: 'Regione Toscana', href: 'http://www.regione.toscana.it/' },
 
-  nationalServiceLink: { name: 'Regione Toscana', href: 'http://www.regione.toscana.it/' },
+  // nationalServiceLink: { name: 'Regione Toscana', href: 'http://www.regione.toscana.it/' },
 
   agency: {
     show: true,
