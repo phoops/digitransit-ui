@@ -26,7 +26,7 @@ const AboutPage = ({ currentLanguage }, context) => {
               false
             ),
         )}
-        <Link to="/">
+        <Link to={context.config.APP_PATH}>
           <div className="call-to-action-button">
             <FormattedMessage
               id="back-to-front-page"
