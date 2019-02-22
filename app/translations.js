@@ -2790,11 +2790,11 @@ const translations = {
     run: 'Corri',
     save: 'Salva',
     search: 'Cerca',
-    'search-destination': 'Cerca destinazione, linea o fermata',
+    'search-destination': 'Cerca indirizzo di destinazione',
     'search-destination-results-but-no-search':
       'Visualizza risultato nel tab “Destinazioni” adiacente',
     'search-no-results': 'Nessun risultato',
-    'search-origin': 'Cerca indirizzo di destinazione, linea o fermata',
+    'search-origin': 'Cerca indirizzo di partenza',
     'search-position': 'Rileva posizione',
     'search-search-results-but-no-destination':
       'Visualizza risultato nel tab "Riguardo alle linee o alle fermate" adiacente',
