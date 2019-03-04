@@ -674,6 +674,7 @@ const translations = {
     nearest: 'Nearest',
     'network-error': 'Network error',
     next: 'Next',
+    'next-departures': 'Next departures',
     'no-bike-allowed-popup':
       'Bicycles are not allowed on buses or trams. If you are using these vehicles on your route, leave the bicycle at the stop or at a Park-and-Ride. ',
     'no-favourite-locations':
@@ -2696,6 +2697,7 @@ const translations = {
     nearest: 'Più vicine',
     'network-error': 'Errore di rete',
     next: 'Prossimo',
+    'next-departures': 'Prossime partenze dalla fermata',
     'no-bike-allowed-popup':
       'Bicycles are not allowed on buses or trams. If you are using these vehicles on your route, leave the bicycle at the stop or at a Park-and-Ride. ',
     'no-favourite-locations':
@@ -2758,7 +2760,7 @@ const translations = {
     'rent-cycle-at': 'Prendi una bici alla stazione {station}',
     'required-ticket': 'Biglietto richiesto per il viaggio',
     'return-cycle-to': 'Ritorna alla stazione {station}',
-    'right-now': 'Proprio ora',
+    'right-now': 'Adesso',
     route: 'Linea',
     'route-custom-settings': 'Impostazioni personalizzate',
     'route-default': 'Impostazioni predefinite',
