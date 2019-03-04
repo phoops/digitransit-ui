@@ -473,12 +473,12 @@ select {
 }
 
 .canceled {
-  color: $cancelation-red;
-  background: linear-gradient(
-    to bottom,
-    transparent calc(50% - 1px),
-    $cancelation-red calc(50% - 1px),
-    $cancelation-red calc(50% + 1px),
-    transparent calc(50% + 1px)
-  );
+  color: $slider-gray;
+  // background: linear-gradient(
+  //   to bottom,
+  //   transparent calc(50% - 1px),
+  //   $cancelation-red calc(50% - 1px),
+  //   $cancelation-red calc(50% + 1px),
+  //   transparent calc(50% + 1px)
+  // );
 }
