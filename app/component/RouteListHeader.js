@@ -11,17 +11,17 @@ const RouteListHeader = ({ className }) => (
     )}
   >
     <div className="route-stop-now">
-      <FormattedMessage id="right-now" defaultMessage="Right now" />
+      
     </div>
     <div className="route-stop-name">
       <FormattedMessage id="stop" defaultMessage="Stop" />
     </div>
-    <div className="route-stop-time">
-      <FormattedMessage id="leaves" defaultMessage="Leaves" />
+    <div className="route-stop-time" style={{ flex: '0 1 auto' }}>
+      <FormattedMessage id="next-departures" defaultMessage="Next departures" />
     </div>
-    <div className="route-stop-time">
+    {/* <div className="route-stop-time">
       <FormattedMessage id="next" defaultMessage="Next" />
-    </div>
+    </div> */}
   </div>
 );
 
