@@ -10,7 +10,7 @@ export default {
   CONFIG,
 
   URL: {
-    OTP: process.env.OTP_URL || `http://localhost:8888/otp/routers/toscana/`,
+    OTP: process.env.OTP_URL || `https://www-stg.muoversintoscana.it/gw/otp/routers/toscana/`,
     // STOP_MAP: `${MAP_URL}/map/v1/hsl-stop-map/`,
     // CITYBIKE_MAP: `${MAP_URL}/map/v1/hsl-citybike-map/`,
     // PARK_AND_RIDE_MAP: `${MAP_URL}/map/v1/hsl-parkandride-map/`,
@@ -129,7 +129,7 @@ export default {
     },
 
     car_park: {
-      availableForSelection: true,
+      availableForSelection: false,
       defaultValue: false,
       icon: 'car-withoutBox',
     },
@@ -439,15 +439,10 @@ export default {
       },
     },
   ],
-  staticMessagesUrl: 'https://yleisviesti.hsldev.com/',
+  staticMessagesUrl: 'https://www.muoversintoscana.it/news/',
   mapLayers: {
     featureMapping: {
       ticketSales: {
-        Palvelupiste: 'servicePoint',
-        'HSL Automaatti MNL': 'ticketMachine',
-        'HSL Automaatti KL': 'ticketMachine',
-        Myyntipiste: 'salesPoint',
-        'R-kioski': 'salesPoint',
       },
     },
   },
