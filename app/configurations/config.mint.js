@@ -385,23 +385,6 @@ export default {
     {
       id: '2',
       content: {
-        fi: [
-          {
-            type: 'text',
-            content:
-              'Käytämme evästeitä palveluidemme kehitykseen. Käyttämällä sivustoa hyväksyt evästeiden käytön. Lue lisää: ',
-          },
-          {
-            type: 'a',
-            content: 'Käyttöehdot',
-            href: 'https://www.hsl.fi/kayttoehdot',
-          },
-          {
-            type: 'a',
-            content: 'Tietosuojaseloste',
-            href: 'https://www.hsl.fi/tietosuojaseloste',
-          },
-        ],
         en: [
           {
             type: 'text',
@@ -411,35 +394,35 @@ export default {
           {
             type: 'a',
             content: 'Terms of use',
-            href: 'https://www.hsl.fi/en/terms-of-use',
+            href: 'http://www.regione.toscana.it/notelegali',
           },
           {
             type: 'a',
             content: 'Privacy Statement',
-            href: 'https://www.hsl.fi/en/description-of-the-file',
+            href: 'http://www.regione.toscana.it/privacy',
           },
         ],
-        sv: [
+        it: [
           {
             type: 'text',
             content:
-              'Vi använder cookies för att utveckla våra tjänster. Genom att använda webbplatsen godkänner du att vi använder cookies. Läs mer: ',
+              "Per migliorare l'esperienza di navigazione delle pagine e di fruizione dei servizi online, questo sito utilizza cookie tecnici e analitici. Maggiori informazioni sui cookie dei siti di Regione Toscana: ",
           },
           {
             type: 'a',
-            content: 'Användarvillkor',
-            href: 'https://www.hsl.fi/sv/anvandarvillkor',
+            content: 'Note legali',
+            href: 'http://www.regione.toscana.it/notelegali',
           },
           {
             type: 'a',
-            content: 'Dataskyddsbeskrivning',
-            href: 'https://www.hsl.fi/sv/dataskyddsbeskrivning',
+            content: 'Privacy policy',
+            href: 'http://www.regione.toscana.it/privacy',
           },
         ],
       },
     },
   ],
-  staticMessagesUrl: 'https://www.muoversintoscana.it/news/',
+  // staticMessagesUrl: 'https://www.muoversintoscana.it/news/',
   mapLayers: {
     featureMapping: {
       ticketSales: {
