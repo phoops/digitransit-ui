@@ -228,7 +228,7 @@ class IndexPage extends React.Component {
           renderCustomButtons={() => (
             <React.Fragment>
               {this.renderStreetModeSelector(config, router)}
-              {this.renderMapLayerSelector()}
+              {/* {this.renderMapLayerSelector()} */}
             </React.Fragment>
           )}
         />
