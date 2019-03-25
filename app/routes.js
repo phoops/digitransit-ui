@@ -180,7 +180,12 @@ export default config => {
         }}
       />
       {/* For all the rest render 404 */}
-      <Route path="*" component={Error404} />
+      <Route 
+        path="*"
+        components={{
+          title: Title,
+          content: SummaryPageWrapper,
+        }} />
     </Route>
   );
 };

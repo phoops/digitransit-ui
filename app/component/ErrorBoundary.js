@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import { Link } from 'react-router';
 
 import { FormattedMessage } from 'react-intl';
 import Icon from './Icon';
@@ -8,6 +9,7 @@ export default class ErrorBoundary extends React.Component {
   static propTypes = { children: PropTypes.node.isRequired };
 
   static contextTypes = {
+    config: PropTypes.object.isRequired,
     raven: PropTypes.shape({
       captureException: PropTypes.func.isRequired,
     }),
@@ -49,6 +51,14 @@ export default class ErrorBoundary extends React.Component {
                 <FormattedMessage id="tell-us-what-happened" defaultMessage="Tell us what happened" />
               </button>
               */}
+          </p>
+          <p>
+            <Link to="/">
+              <FormattedMessage
+                id="back-to-front-page"
+                defaultMessage="Back to front page ›"
+              />
+            </Link>
           </p>
         </div>
       );
