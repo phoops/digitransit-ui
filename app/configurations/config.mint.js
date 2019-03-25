@@ -10,7 +10,7 @@ export default {
   CONFIG,
 
   URL: {
-    OTP: process.env.OTP_URL || `https://www-stg.muoversintoscana.it/gw/otp/routers/toscana/`,
+    OTP: process.env.OTP_URL || `https://www.muoversintoscana.it/gw/otp/routers/toscana/`,
     // STOP_MAP: `${MAP_URL}/map/v1/hsl-stop-map/`,
     // CITYBIKE_MAP: `${MAP_URL}/map/v1/hsl-citybike-map/`,
     // PARK_AND_RIDE_MAP: `${MAP_URL}/map/v1/hsl-parkandride-map/`,
