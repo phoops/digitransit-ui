@@ -6,6 +6,7 @@ import groupBy from 'lodash/groupBy';
 import values from 'lodash/values';
 import cx from 'classnames';
 
+import { StopAlertsQuery } from '../util/alertQueries';
 import { getDistanceToNearestStop } from '../util/geo-utils';
 import RouteStop from './RouteStop';
 import withBreakpoint from '../util/withBreakpoint';
@@ -55,26 +56,17 @@ class RouteStopListContainer extends React.PureComponent {
     const mode = this.props.pattern.route.mode.toLowerCase();
 
     const vehicles = groupBy(
-      values(this.props.vehicles)
-        .filter(
-          vehicle =>
-            this.props.currentTime - vehicle.timestamp * 1000 < 5 * 60 * 1000,
-        )
-        .filter(
-          vehicle =>
-            vehicle.tripStartTime && vehicle.tripStartTime !== 'undefined',
-        ),
-      vehicle => vehicle.direction,
-    );
-
-    const vehicleStops = groupBy(
-      vehicles[this.props.pattern.directionId],
-      vehicle => `HSL:${vehicle.next_stop}`,
+      values(this.props.vehicles).filter(
+        vehicle =>
+          this.props.currentTime - vehicle.timestamp * 1000 < 5 * 60 * 1000,
+      ),
+      vehicle => vehicle.next_stop,
     );
 
     const rowClassName = `bp-${this.props.breakpoint}`;
 
     return stops.map((stop, i) => {
+      const idx = i; // DT-3159: using in key of RouteStop component
       const isNearest =
         (nearest &&
           nearest.distance <
@@ -83,18 +75,22 @@ class RouteStopListContainer extends React.PureComponent {
 
       return (
         <RouteStop
-          key={stop.gtfsId}
+          color={
+            this.props.pattern.route && this.props.pattern.route.color
+              ? `#${this.props.pattern.route.color}`
+              : null
+          }
+          key={`${stop.gtfsId}-${this.props.pattern}-${idx}`} // DT-3159: added -${idx}
           stop={stop}
           mode={mode}
-          vehicle={
-            vehicleStops[stop.gtfsId] ? vehicleStops[stop.gtfsId][0] : null
-          }
+          vehicle={vehicles[stop.gtfsId] ? vehicles[stop.gtfsId][0] : null}
           distance={isNearest ? nearest.distance : null}
           ref={isNearest ? this.setNearestStop : null}
           currentTime={this.props.currentTime.unix()}
           last={i === stops.length - 1}
           first={i === 0}
           className={rowClassName}
+          displayNextDeparture={this.context.config.displayNextDeparture}
         />
       );
     });
@@ -111,7 +107,7 @@ class RouteStopListContainer extends React.PureComponent {
   }
 }
 
-export default Relay.createContainer(
+const containerComponent = Relay.createContainer(
   connectToStores(
     withBreakpoint(RouteStopListContainer),
     ['RealTimeInformationStore', 'PositionStore', 'TimeStore'],
@@ -134,6 +130,7 @@ export default Relay.createContainer(
             mode
           }
           stops {
+            ${StopAlertsQuery}
             stopTimesForPattern(id: $patternId, startTime: $currentTime) {
               realtime
               realtimeState
@@ -154,3 +151,5 @@ export default Relay.createContainer(
     },
   },
 );
+
+export { containerComponent as default, RouteStopListContainer as Component };

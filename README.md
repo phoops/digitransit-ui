@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/HSLdevcom/digitransit-ui.svg?branch=master)](https://travis-ci.org/HSLdevcom/digitransit-ui)
 [![codecov](https://codecov.io/gh/HSLdevcom/digitransit-ui/branch/master/graph/badge.svg)](https://codecov.io/gh/HSLdevcom/digitransit-ui)
 
+
 Digitransit-ui is a mobile friendly User interface built to work with Digitransit platform
 
 ## Licensing
@@ -37,3 +38,4 @@ More information about [testing](docs/Tests.md).
 * [Benchmark results and UX](docs/JSBenchmark.md)
 * [Navigation](docs/Navigation.md)
 * [Themes](docs/Themes.md)
+* [GeoJSON](docs/GeoJson.md)

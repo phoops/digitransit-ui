@@ -5,7 +5,6 @@ import { boundWithMinimumAreaSimple } from './util/geo-utils';
 
 const configs = {}; // cache merged configs for speed
 const themeMap = {};
-const piwikMap = [];
 
 if (defaultConfig.themeMap) {
   Object.keys(defaultConfig.themeMap).forEach(theme => {
@@ -13,21 +12,12 @@ if (defaultConfig.themeMap) {
   });
 }
 
-if (defaultConfig.piwikMap) {
-  for (let i = 0; i < defaultConfig.piwikMap.length; i++) {
-    piwikMap.push({
-      id: defaultConfig.piwikMap[i].id,
-      expr: new RegExp(defaultConfig.piwikMap[i].expr, 'i'),
-    });
-  }
-}
-
 function addMetaData(config) {
   let stats;
 
   try {
     // eslint-disable-next-line global-require, import/no-dynamic-require
-    stats = require(`../_static/iconstats-${config.CONFIG}`);
+    stats = require(`../_static/assets/iconstats-${config.CONFIG}`);
   } catch (error) {
     return;
   }
@@ -35,7 +25,7 @@ function addMetaData(config) {
   const html = stats.html.join(' ');
   const APP_PATH =
     config.APP_PATH && config.APP_PATH !== '' ? `${config.APP_PATH}'/'` : '/';
-  const appPathPrefix = process.env.ASSET_URL || APP_PATH;
+  const appPathPrefix = config.URL.ASSET_URL || APP_PATH;
 
   htmlParser.convert_html_to_json(html, (err, data) => {
     if (!err) {
@@ -59,7 +49,7 @@ function addMetaData(config) {
       data.link.forEach(e => {
         // eslint-disable-next-line no-param-reassign
         delete e.innerHTML;
-        if (process.env.ASSET_URL && e.href.startsWith('/icons')) {
+        if (config.URL.ASSET_URL && e.href.startsWith('/icons')) {
           e.href = appPathPrefix + e.href;
         }
       });
@@ -72,10 +62,8 @@ function addMetaData(config) {
   });
 }
 
-export function getNamedConfiguration(configName, piwikId) {
-  const key = configName + (piwikId || '');
-
-  if (!configs[key]) {
+export function getNamedConfiguration(configName) {
+  if (!configs[configName]) {
     let additionalConfig;
 
     if (configName !== 'default') {
@@ -83,7 +71,13 @@ export function getNamedConfiguration(configName, piwikId) {
       additionalConfig = require(`./configurations/config.${configName}`)
         .default;
     }
-    const config = configMerger(defaultConfig, additionalConfig);
+
+    // use cached baseConfig that is potentially patched in server start up
+    // for merge if one is configured
+    const baseConfig = configs[process.env.BASE_CONFIG];
+    const config = baseConfig
+      ? configMerger(baseConfig, additionalConfig)
+      : configMerger(defaultConfig, additionalConfig);
 
     if (config.useSearchPolygon && config.areaPolygon) {
       // pass poly as 'lon lat, lon lat, lon lat ...' sequence
@@ -103,21 +97,41 @@ export function getNamedConfiguration(configName, piwikId) {
       config.modeBoundingBoxes = config.modeBoundingBoxes || {};
       config.modeBoundingBoxes[mode] = boundingBoxes;
     });
+    Object.keys(config.realTimePatch).forEach(realTimeKey => {
+      config.realTime[realTimeKey] = {
+        ...(config.realTime[realTimeKey] || {}),
+        ...config.realTimePatch[realTimeKey],
+      };
+    });
 
-    if (piwikId) {
-      config.PIWIK_ID = piwikId;
-    }
     addMetaData(config); // add dynamic metadata content
 
-    configs[key] = config;
+    if (!process.env.OIDC_CLIENT_ID) {
+      // disable user account access if backend is not available
+      config.showLogin = false;
+    }
+
+    const appPathPrefix = config.URL.ASSET_URL || '';
+
+    if (config.geoJson && Array.isArray(config.geoJson.layers)) {
+      for (let i = 0; i < config.geoJson.layers.length; i++) {
+        const layer = config.geoJson.layers[i];
+        layer.url = appPathPrefix + layer.url;
+      }
+    }
+
+    if (config.geoJson && config.geoJson.zones) {
+      config.geoJson.zones.url = appPathPrefix + config.geoJson.zones.url;
+    }
+
+    configs[configName] = config;
   }
-  return configs[key];
+  return configs[configName];
 }
 
 export function getConfiguration(req) {
-  let configName = process.env.CONFIG || 'default';
+  let configName = process.env.CONFIG || process.env.BASE_CONFIG || 'default';
   let host;
-  let piwikId;
 
   if (req) {
     host =
@@ -140,19 +154,5 @@ export function getConfiguration(req) {
     });
   }
 
-  if (
-    host &&
-    process.env.NODE_ENV !== 'development' &&
-    (!process.env.PIWIK_ID || process.env.PIWIK_ID === '')
-  ) {
-    // PIWIK_ID unset, map dynamically by hostname
-    for (let i = 0; i < piwikMap.length; i++) {
-      if (piwikMap[i].expr.test(host)) {
-        piwikId = piwikMap[i].id;
-        // console.log('###PIWIK', piwikId);
-        break;
-      }
-    }
-  }
-  return getNamedConfiguration(configName, piwikId);
+  return getNamedConfiguration(configName);
 }

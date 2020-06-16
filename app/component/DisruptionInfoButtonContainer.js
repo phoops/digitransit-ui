@@ -4,6 +4,7 @@ import Relay from 'react-relay/classic';
 import { routerShape, locationShape } from 'react-router';
 import DisruptionInfoButton from './DisruptionInfoButton';
 import { isBrowser } from '../util/browser';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 function DisruptionInfoButtonContainer(
   outerProps,
@@ -17,6 +18,11 @@ function DisruptionInfoButtonContainer(
           ...location.state,
           disruptionInfoOpen: true,
         },
+      });
+      addAnalyticsEvent({
+        category: 'Navigation',
+        action: 'OpenDisruptions',
+        name: null,
       });
     };
 
@@ -52,8 +58,8 @@ function DisruptionInfoButtonContainer(
 }
 
 DisruptionInfoButtonContainer.contextTypes = {
-  router: routerShape.isRequired, // eslint-disable-line react/no-typos
-  location: locationShape.isRequired, // eslint-disable-line react/no-typos
+  router: routerShape.isRequired,
+  location: locationShape.isRequired,
   config: PropTypes.shape({
     feedIds: PropTypes.arrayOf(PropTypes.string.isRequired),
   }).isRequired,

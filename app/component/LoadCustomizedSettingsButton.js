@@ -11,6 +11,7 @@ import { getCustomizedSettings } from '../store/localStorage';
 import { getDefaultSettings } from '../util/planParamUtil';
 import { getDrawerWidth } from '../util/browser';
 import SecondaryButton from './SecondaryButton';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 class LoadCustomizedSettingsButton extends React.Component {
   static propTypes = {
@@ -19,7 +20,6 @@ class LoadCustomizedSettingsButton extends React.Component {
 
   static contextTypes = {
     config: PropTypes.object.isRequired,
-    piwik: PropTypes.object,
     router: routerShape.isRequired,
   };
 
@@ -32,13 +32,12 @@ class LoadCustomizedSettingsButton extends React.Component {
   }
 
   loadSettingsData = () => {
-    if (this.context.piwik != null) {
-      this.context.piwik.trackEvent(
-        'ItinerarySettings',
-        'SettingsPanelloadSettingsButton',
-        'loadSettings',
-      );
-    }
+    addAnalyticsEvent({
+      event: 'sendMatomoEvent',
+      category: 'ItinerarySettings',
+      action: 'SettingsPanelloadSettingsButton',
+      name: 'LoadSettings',
+    });
 
     // const querySettings = getQuerySettings(this.context.location.query);
     const defaultSettings = getDefaultSettings(this.context.config);

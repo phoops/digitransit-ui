@@ -16,49 +16,61 @@ import {
   realtimeDeparture as exampleRealtimeDeparture,
 } from './ExampleData';
 
-function Departure(props) {
-  const mode = props.departure.pattern.route.mode.toLowerCase();
-
+function Departure({
+  alertSeverityLevel,
+  canceled,
+  className,
+  currentTime,
+  departure,
+  isArrival,
+  isLastStop,
+  showPlatformCode,
+  staticDeparture,
+  useUTC,
+}) {
+  const mode = departure.pattern.route.mode.toLowerCase();
   let platformNumber = false;
-  if (props.showPlatformCode && props.departure.stop.platformCode) {
+  if (showPlatformCode && departure.stop.platformCode) {
     platformNumber = (
-      <PlatformNumber number={props.departure.stop.platformCode} />
+      <PlatformNumber
+        number={departure.stop.platformCode}
+        isRailOrSubway={mode === 'rail' || mode === 'subway'}
+      />
     );
   }
-
   return (
-    <p className={cx('departure', 'route-detail-text', props.className)}>
-      {!props.staticDeparture && (
+    <p className={cx('departure', 'route-detail-text', className)}>
+      {!staticDeparture && (
         <DepartureTime
-          departureTime={props.departure.stoptime}
-          realtime={props.departure.realtime}
-          currentTime={props.currentTime}
-          canceled={props.canceled}
-          useUTC={props.useUTC}
+          departureTime={departure.stoptime}
+          realtime={departure.realtime}
+          currentTime={currentTime}
+          canceled={canceled}
+          useUTC={useUTC}
         />
       )}
       <RouteNumberContainer
-        route={props.departure.pattern.route}
-        hasDisruption={props.hasDisruption}
-        isCallAgency={isCallAgencyDeparture(props.departure)}
+        alertSeverityLevel={alertSeverityLevel}
+        route={departure.pattern.route}
+        isCallAgency={isCallAgencyDeparture(departure)}
         fadeLong
       />
       <RouteDestination
         mode={mode}
         destination={
-          props.departure.headsign ||
-          props.departure.pattern.headsign ||
-          props.departure.trip.tripHeadsign ||
-          props.departure.pattern.route.longName
+          departure.headsign ||
+          departure.pattern.headsign ||
+          (departure.trip && departure.trip.tripHeadsign) ||
+          departure.pattern.route.longName
         }
-        isArrival={props.isArrival}
-        isLastStop={props.isLastStop}
+        isArrival={isArrival}
+        isLastStop={isLastStop}
       />
-      {props.canceled ? (
-        <div className="departure-canceled">
+      {canceled ? (
+        <span className="departure-canceled">
           <Icon img="icon-icon_caution" />
           <FormattedMessage id="canceled" defaultMessage="Canceled" />
-        </div>
+        </span>
       ) : (
         platformNumber
       )}
@@ -118,9 +130,9 @@ Departure.description = () => (
 Departure.displayName = 'Departure';
 
 Departure.propTypes = {
+  alertSeverityLevel: PropTypes.string,
   canceled: PropTypes.bool,
   className: PropTypes.string,
-  hasDisruption: PropTypes.bool,
   currentTime: PropTypes.number.isRequired,
   departure: PropTypes.shape({
     headsign: PropTypes.string,
@@ -146,6 +158,7 @@ Departure.propTypes = {
 };
 
 Departure.defaultProps = {
+  alertSeverityLevel: undefined,
   showPlatformCode: false,
 };
 

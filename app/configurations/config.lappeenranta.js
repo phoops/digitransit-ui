@@ -1,10 +1,11 @@
+/* eslint-disable prefer-template */
 import configMerger from '../util/configMerger';
 
 const CONFIG = 'lappeenranta';
 const APP_TITLE = 'reittiopas.lappeenranta.fi';
 const APP_DESCRIPTION = '';
 
-const walttiConfig = require('./waltti').default;
+const walttiConfig = require('./config.waltti').default;
 
 export default configMerger(walttiConfig, {
   CONFIG,
@@ -25,6 +26,15 @@ export default configMerger(walttiConfig, {
   textLogo: true, // title text instead of logo img
 
   favicon: './app/configurations/images/lappeenranta/bussi_fin.jpeg',
+
+  mapLayers: {
+    tooltip: {
+      fi: 'Uutta! Saat nyt lähellä olevat bussit kartalle asetuksista.',
+      en: 'New! You can now get nearby busses on the map from the settings.',
+      sv:
+        'Nytt! I inställningarna kan du nu välja att se närliggande bussar på kartan.',
+    },
+  },
 
   feedIds: ['Lappeenranta'],
 
@@ -69,6 +79,9 @@ export default configMerger(walttiConfig, {
     },
   ],
 
+  showAllBusses: true,
+  showVehiclesOnStopPage: true,
+
   footer: {
     content: [
       { label: `© Lappeenranta ${walttiConfig.YEAR}` },
@@ -109,5 +122,16 @@ export default configMerger(walttiConfig, {
         ],
       },
     ],
+  },
+  zoneIdMapping: {
+    1: 'A',
+    2: 'B',
+    3: 'C',
+    4: 'D',
+  },
+  stopCard: {
+    header: {
+      showZone: true,
+    },
   },
 });

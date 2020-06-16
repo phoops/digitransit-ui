@@ -42,7 +42,6 @@ class Timetable extends React.Component {
       ).isRequired,
     }).isRequired,
     propsForStopPageActionBar: PropTypes.shape({
-      printUrl: PropTypes.string.isRequired,
       startDate: PropTypes.string,
       selectedDate: PropTypes.string,
       onDateChange: PropTypes.func,
@@ -235,16 +234,18 @@ class Timetable extends React.Component {
     const timetableMap = this.groupArrayByHour(routesWithDetails);
 
     const stopIdSplitted = this.props.stop.gtfsId.split(':');
-
+    const stopTimetableHandler =
+      this.context.config.timetables &&
+      this.context.config.timetables[stopIdSplitted[0]];
     const stopPDFURL =
-      stopIdSplitted[0] === 'HSL' && this.props.stop.locationType !== 'STATION'
-        ? `${
-            this.context.config.URL.API_URL
-          }/timetables/v1/${stopIdSplitted[0].toLowerCase()}/stops/${
-            stopIdSplitted[1]
-          }.pdf`
+      stopTimetableHandler &&
+      this.context.config.URL.STOP_TIMETABLES[stopIdSplitted[0]] &&
+      this.props.stop.locationType !== 'STATION'
+        ? stopTimetableHandler.stopPdfUrlResolver(
+            this.context.config.URL.STOP_TIMETABLES[stopIdSplitted[0]],
+            this.props.stop,
+          )
         : null;
-
     return (
       <div className="timetable">
         {this.state.showFilterModal === true ? (
@@ -262,7 +263,6 @@ class Timetable extends React.Component {
             stop={this.props.stop}
           />
           <StopPageActionBar
-            printUrl={this.props.propsForStopPageActionBar.printUrl}
             startDate={this.props.propsForStopPageActionBar.startDate}
             selectedDate={this.props.propsForStopPageActionBar.selectedDate}
             onDateChange={this.props.propsForStopPageActionBar.onDateChange}
@@ -365,7 +365,11 @@ Timetable.description = () => (
     <ComponentUsageExample description="">
       <Timetable
         stop={exampleStop}
-        propsForStopPageActionBar={{ printUrl: 'http://www.hsl.fi' }}
+        propsForStopPageActionBar={{
+          startDate: '20190110',
+          selectedDate: '20190110',
+          onDateChange: () => {},
+        }}
       />
     </ComponentUsageExample>
   </div>

@@ -1,55 +1,104 @@
+import moment from 'moment';
 import PropTypes from 'prop-types';
 import React from 'react';
-import moment from 'moment';
 import { FormattedMessage } from 'react-intl';
 
-import RouteNumber from './RouteNumber';
-import Icon from './Icon';
 import ComponentUsageExample from './ComponentUsageExample';
+import Icon from './Icon';
+import ItineraryCircleLine from './ItineraryCircleLine';
+import RouteNumber from './RouteNumber';
+import ServiceAlertIcon from './ServiceAlertIcon';
+import { getActiveAlertSeverityLevel } from '../util/alertUtils';
+import {
+  CityBikeNetworkType,
+  getCityBikeNetworkId,
+  getCityBikeNetworkConfig,
+} from '../util/citybikes';
 import { displayDistance } from '../util/geo-utils';
 import { durationToString } from '../util/timeUtils';
-import ItineraryCircleLine from './ItineraryCircleLine';
+import { isKeyboardSelectionEvent } from '../util/browser';
 
-function WalkLeg(props, context) {
-  const distance = displayDistance(
-    parseInt(props.leg.distance, 10),
-    context.config,
-  );
-  const duration = durationToString(props.leg.duration * 1000);
+function WalkLeg(
+  { children, focusAction, index, leg, previousLeg },
+  { config },
+) {
+  const distance = displayDistance(parseInt(leg.distance, 10), config);
+  const duration = durationToString(leg.duration * 1000);
   const modeClassName = 'walk';
 
-  const { previousLeg } = props;
+  const networkType = getCityBikeNetworkConfig(
+    getCityBikeNetworkId(
+      previousLeg &&
+        previousLeg.rentedBike &&
+        previousLeg.from.bikeRentalStation &&
+        previousLeg.from.bikeRentalStation.networks,
+    ),
+    config,
+  ).type;
 
-  /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
+  const returnNotice =
+    previousLeg && previousLeg.rentedBike ? (
+      <FormattedMessage
+        id={
+          networkType === CityBikeNetworkType.Scooter
+            ? 'return-scooter-to'
+            : 'return-cycle-to'
+        }
+        values={{ station: leg.from ? leg.from.name : '' }}
+        defaultMessage="Return the bike to {station} station"
+      />
+    ) : null;
+
   return (
-    <div key={props.index} className="row itinerary-row">
-      <div className="small-2 columns itinerary-time-column">
+    <div key={index} className="row itinerary-row">
+      <span className="sr-only">
+        {returnNotice}
+        <FormattedMessage
+          id="itinerary-details.walk-leg"
+          values={{
+            time: moment(leg.startTime).format('HH:mm'),
+            distance,
+            duration,
+            origin: leg.from ? leg.from.name : '',
+            destination: leg.to ? leg.to.name : '',
+          }}
+        />
+      </span>
+      <div className="small-2 columns itinerary-time-column" aria-hidden="true">
         <div className="itinerary-time-column-time">
-          {moment(props.leg.startTime).format('HH:mm')}
+          {moment(leg.startTime).format('HH:mm')}
         </div>
-        <RouteNumber mode={props.leg.mode.toLowerCase()} vertical />
+        <RouteNumber mode={leg.mode.toLowerCase()} vertical />
       </div>
-      <ItineraryCircleLine index={props.index} modeClassName={modeClassName} />
+      <ItineraryCircleLine index={index} modeClassName={modeClassName} />
       <div
-        onClick={props.focusAction}
-        className={`small-9 columns itinerary-instruction-column ${props.leg.mode.toLowerCase()}`}
+        onClick={focusAction}
+        onKeyPress={e => isKeyboardSelectionEvent(e) && focusAction(e)}
+        role="button"
+        tabIndex="0"
+        className={`small-9 columns itinerary-instruction-column ${leg.mode.toLowerCase()}`}
       >
-        <div className="itinerary-leg-first-row">
+        <span className="sr-only">
+          <FormattedMessage
+            id="itinerary-summary.show-on-map"
+            values={{ target: leg.from.name || '' }}
+          />
+        </span>
+        <div className="itinerary-leg-first-row" aria-hidden="true">
           <div>
-            {previousLeg && previousLeg.rentedBike ? (
-              <FormattedMessage
-                id="return-cycle-to"
-                values={{ station: props.leg.from.name }}
-                defaultMessage="Return the bike to {station} station"
-              />
-            ) : (
-              props.leg.from.name
-            )}
-            {props.children}
+            {returnNotice || leg.from.name}
+            <ServiceAlertIcon
+              className="inline-icon"
+              severityLevel={getActiveAlertSeverityLevel(
+                leg.from.stop && leg.from.stop.alerts,
+                leg.startTime / 1000,
+              )}
+            />
+            {children}
           </div>
           <Icon img="icon-icon_search-plus" className="itinerary-search-icon" />
         </div>
-        <div className="itinerary-leg-action">
+        <div className="itinerary-leg-action" aria-hidden="true">
           <FormattedMessage
             id="walk-distance-duration"
             values={{ distance, duration }}

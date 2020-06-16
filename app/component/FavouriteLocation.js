@@ -9,6 +9,7 @@ import DepartureTime from './DepartureTime';
 import RouteNumber from './RouteNumber';
 import { favouriteLocation as favouriteLocationExample } from './ExampleData';
 import { isStop, isTerminal } from '../util/suggestionUtils';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 const FavouriteLocation = ({
   favourite,
@@ -18,8 +19,7 @@ const FavouriteLocation = ({
   firstTransitLeg,
   clickFavourite,
 }) => {
-  const { locationName, id, lat, lon, selectedIconId } = favourite;
-
+  const { name, favouriteId, lat, lon, selectedIconId } = favourite;
   let departureTimeComponent;
   if (departureTime && currentTime < departureTime) {
     // Departure is in the future
@@ -67,19 +67,24 @@ const FavouriteLocation = ({
     <div
       data-swipeable="true"
       className={cx('favourite-location-content', className)}
-      onClick={() => clickFavourite(locationName, lat, lon)}
+      onClick={() => clickFavourite(name, lat, lon)}
     >
       <div className="favourite-location-arrival">
         <Icon className="favourite-location-icon" img={selectedIconId} />
-        <div className="favourite-location-name">{locationName}</div>
+        <div className="favourite-location-name">{name}</div>
       </div>
 
       {info}
       <Link
         onClick={e => {
           e.stopPropagation();
+          addAnalyticsEvent({
+            category: 'Favourite',
+            action: 'EditFavourite',
+            name: null,
+          });
         }}
-        to={`/suosikki/muokkaa/${favouriteType}/${id}`}
+        to={`/suosikki/muokkaa/${favouriteType}/${favouriteId}`}
         className="cursor-pointer no-decoration"
       >
         <div className="favourite-edit-icon-click-area">

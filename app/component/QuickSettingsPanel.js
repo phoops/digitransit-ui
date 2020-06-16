@@ -3,9 +3,6 @@ import React from 'react';
 import cx from 'classnames';
 import { intlShape } from 'react-intl';
 import get from 'lodash/get';
-import isEqual from 'lodash/isEqual';
-import pick from 'lodash/pick';
-import pickBy from 'lodash/pickBy';
 import xor from 'lodash/xor';
 import { routerShape, locationShape } from 'react-router';
 
@@ -14,21 +11,16 @@ import Icon from './Icon';
 import ModeFilter from './ModeFilter';
 import RightOffcanvasToggle from './RightOffcanvasToggle';
 import TimeSelectorContainer from './TimeSelectorContainer';
-import { StreetMode, OptimizeType, QuickOptionSetType } from '../constants';
+import { QuickOptionSetType } from '../constants';
+import { getModes, isBikeRestricted } from '../util/modeUtils';
 import {
-  getModes,
-  isBikeRestricted,
-  getStreetMode,
-  getDefaultTransportModes,
-  hasBikeRestriction,
-} from '../util/modeUtils';
-import { getDefaultSettings, getCurrentSettings } from '../util/planParamUtil';
+  matchQuickOption,
+  getQuickOptionSets,
+  getApplicableQuickOptionSets,
+} from '../util/planParamUtil';
 import { getCustomizedSettings } from '../store/localStorage';
-import {
-  replaceQueryParams,
-  clearQueryParams,
-  getQuerySettings,
-} from '../util/queryUtils';
+import { replaceQueryParams, clearQueryParams } from '../util/queryUtils';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 class QuickSettingsPanel extends React.Component {
   static propTypes = {
@@ -41,12 +33,21 @@ class QuickSettingsPanel extends React.Component {
     intl: intlShape.isRequired,
     router: routerShape.isRequired,
     location: locationShape.isRequired,
-    piwik: PropTypes.object,
     config: PropTypes.object.isRequired,
   };
 
   state = {
     isPopUpOpen: false,
+  };
+
+  actions = {
+    toggleBusState: () => this.toggleTransportMode('bus'),
+    toggleTramState: () => this.toggleTransportMode('tram'),
+    toggleRailState: () => this.toggleTransportMode('rail'),
+    toggleSubwayState: () => this.toggleTransportMode('subway'),
+    toggleFerryState: () => this.toggleTransportMode('ferry'),
+    toggleCitybikeState: () => this.toggleTransportMode('citybike'),
+    toggleAirplaneState: () => this.toggleTransportMode('airplane'),
   };
 
   onRequestChange = newState => {
@@ -60,95 +61,26 @@ class QuickSettingsPanel extends React.Component {
 
   setArriveBy = ({ target }) => {
     const arriveBy = target.value;
-    if (this.context.piwik != null) {
-      this.context.piwik.trackEvent(
-        'ItinerarySettings',
-        'LeavingArrivingSelection',
-        arriveBy === 'true' ? 'SelectArriving' : 'SelectLeaving',
-      );
-    }
+    addAnalyticsEvent({
+      event: 'sendMatomoEvent',
+      category: 'ItinerarySettings',
+      action: 'LeavingArrivingSelection',
+      name: arriveBy === 'true' ? 'SelectArriving' : 'SelectLeaving',
+    });
     replaceQueryParams(this.context.router, { arriveBy });
   };
 
-  getApplicableQuickOptionSets = () => {
-    const { config, location } = this.context;
-    const streetMode = getStreetMode(location, config).toLowerCase();
-    return [
-      QuickOptionSetType.DefaultRoute,
-      ...(config.quickOptions[streetMode]
-        ? config.quickOptions[streetMode].availableOptionSets
-        : []),
-    ];
-  };
-
-  getQuickOptionSets = () => {
-    const { config } = this.context;
-    const defaultSettings = getDefaultSettings(config);
-    const customizedSettings = getCustomizedSettings();
-    delete defaultSettings.modes;
-    delete customizedSettings.modes;
-
-    const quickOptionSets = {
-      [QuickOptionSetType.DefaultRoute]: {
-        ...defaultSettings,
-      },
-      [QuickOptionSetType.LeastElevationChanges]: {
-        ...defaultSettings,
-        optimize: OptimizeType.Triangle,
-        safetyFactor: 0.1,
-        slopeFactor: 0.8,
-        timeFactor: 0.1,
-      },
-      [QuickOptionSetType.LeastTransfers]: {
-        ...defaultSettings,
-        transferPenalty: 5460,
-        walkReluctance: config.defaultOptions.walkReluctance.less,
-      },
-      [QuickOptionSetType.LeastWalking]: {
-        ...defaultSettings,
-        walkBoardCost: config.defaultOptions.walkBoardCost.more,
-        walkReluctance: config.defaultOptions.walkReluctance.least,
-      },
-      'public-transport-with-bicycle': {
-        ...defaultSettings,
-        modes: [
-          StreetMode.Bicycle,
-          ...getDefaultTransportModes(config).filter(
-            mode => !hasBikeRestriction(config, mode),
-          ),
-        ].join(','),
-      },
-      [QuickOptionSetType.PreferWalkingRoutes]: {
-        ...defaultSettings,
-        optimize: OptimizeType.Safe,
-        walkReluctance: config.defaultOptions.walkReluctance.most,
-      },
-      [QuickOptionSetType.PreferGreenways]: {
-        ...defaultSettings,
-        optimize: OptimizeType.Greenways,
-      },
-    };
-
-    if (customizedSettings && Object.keys(customizedSettings).length > 0) {
-      quickOptionSets[QuickOptionSetType.SavedSettings] = {
-        ...defaultSettings,
-        ...customizedSettings,
-      };
-    }
-    return pick(quickOptionSets, this.getApplicableQuickOptionSets());
-  };
-
   setQuickOption = name => {
-    const { piwik, router } = this.context;
-    if (piwik != null) {
-      piwik.trackEvent(
-        'ItinerarySettings',
-        'ItineraryQuickSettingsSelection',
-        name,
-      );
-    }
+    const { router } = this.context;
 
-    const quickOptionSet = this.getQuickOptionSets()[name];
+    addAnalyticsEvent({
+      event: 'sendMatomoEvent',
+      category: 'ItinerarySettings',
+      action: 'ItineraryQuickSettingsSelection',
+      name,
+    });
+
+    const quickOptionSet = getQuickOptionSets(this.context)[name];
     if (name === QuickOptionSetType.SavedSettings) {
       clearQueryParams(router, Object.keys(quickOptionSet));
     } else {
@@ -158,38 +90,26 @@ class QuickSettingsPanel extends React.Component {
 
   getModes = () => getModes(this.context.location, this.context.config);
 
-  isModeSelected(mode) {
-    return this.getModes().includes(mode.toUpperCase());
-  }
-
-  actions = {
-    toggleBusState: () => this.toggleTransportMode('bus'),
-    toggleTramState: () => this.toggleTransportMode('tram'),
-    toggleRailState: () => this.toggleTransportMode('rail'),
-    toggleSubwayState: () => this.toggleTransportMode('subway'),
-    toggleFerryState: () => this.toggleTransportMode('ferry'),
-    toggleCitybikeState: () => this.toggleTransportMode('citybike'),
-    toggleAirplaneState: () => this.toggleTransportMode('airplane'),
-  };
-
   toggleCustomizeSearchOffcanvas = () => {
+    addAnalyticsEvent({
+      action: 'OpenSettings',
+      category: 'ItinerarySettings',
+      name: null,
+    });
     this.internalSetOffcanvas(!this.getOffcanvasState());
   };
 
   togglePopUp = () => {
-    this.setState({ isPopUpOpen: !this.state.isPopUpOpen });
+    this.setState(({ isPopUpOpen }) => ({ isPopUpOpen: !isPopUpOpen }));
   };
 
   internalSetOffcanvas = newState => {
-    /*
-    if (this.context.piwik != null) {
-      this.context.piwik.trackEvent(
-        'ItinerarySettings',
-        'ExtraSettingsPanelClick',
-        newState ? 'ExtraSettingsPanelOpen' : 'ExtraSettingsPanelClose',
-      );
-    }
-    */
+    addAnalyticsEvent({
+      event: 'sendMatomoEvent',
+      category: 'ItinerarySettings',
+      action: 'ExtraSettingsPanelClick',
+      name: newState ? 'ExtraSettingsPanelOpen' : 'ExtraSettingsPanelClose',
+    });
 
     if (newState) {
       this.context.router.push({
@@ -204,44 +124,9 @@ class QuickSettingsPanel extends React.Component {
     }
   };
 
-  matchQuickOption = () => {
-    const {
-      config,
-      location: { query },
-    } = this.context;
-
-    // Find out which quick option the user has selected
-    const quickOptionSets = this.getQuickOptionSets();
-    const matchesOptionSet = (optionSetName, settings) => {
-      if (!quickOptionSets[optionSetName]) {
-        return false;
-      }
-      const quickSettings = pickBy(
-        { ...quickOptionSets[optionSetName] },
-        property => (Array.isArray(property) ? property.length > 0 : true),
-      );
-      const appliedSettings = pick(settings, Object.keys(quickSettings));
-      return isEqual(quickSettings, appliedSettings);
-    };
-
-    const querySettings = getQuerySettings(query);
-    const currentSettings = getCurrentSettings(config, query);
-
-    if (matchesOptionSet(QuickOptionSetType.SavedSettings, currentSettings)) {
-      return (
-        Object.keys(quickOptionSets)
-          .filter(key => key !== QuickOptionSetType.SavedSettings)
-          .find(key => matchesOptionSet(key, querySettings)) ||
-        QuickOptionSetType.SavedSettings
-      );
-    }
-
-    return (
-      Object.keys(quickOptionSets).find(key =>
-        matchesOptionSet(key, currentSettings),
-      ) || 'custom-settings'
-    );
-  };
+  isModeSelected(mode) {
+    return this.getModes().includes(mode.toUpperCase());
+  }
 
   toggleTransportMode(mode, otpMode) {
     if (
@@ -258,13 +143,14 @@ class QuickSettingsPanel extends React.Component {
       ',',
     );
 
-    if (this.context.piwik != null) {
-      this.context.piwik.trackEvent(
-        'ItinerarySettings',
-        'QuickSettingsTransportModeSelection',
-        modes,
-      );
-    }
+    const disable = this.getModes().includes(mode.toUpperCase());
+    addAnalyticsEvent({
+      category: 'ItinerarySettings',
+      action: disable
+        ? 'QuickSettingsDisableTransportMode'
+        : 'QuickSettingsEnableTransportMode',
+      name: mode.toUpperCase(),
+    });
 
     replaceQueryParams(this.context.router, { modes });
   }
@@ -272,14 +158,23 @@ class QuickSettingsPanel extends React.Component {
   render() {
     const arriveBy = get(this.context.location, 'query.arriveBy', 'false');
     const customizedSettings = getCustomizedSettings();
-    const quickOption = this.matchQuickOption();
-    const applicableQuickOptionSets = this.getApplicableQuickOptionSets();
+    const quickOption = matchQuickOption(this.context);
+    const applicableQuickOptionSets = getApplicableQuickOptionSets(
+      this.context,
+    );
+    const modesWithNoBicycle = this.context.config.modesWithNoBike;
 
     return (
       <div className={cx(['quicksettings-container'])}>
         <AlertPopUp
+          className="no-bike-allowed-popup"
           isPopUpOpen={this.state.isPopUpOpen}
-          textId="no-bike-allowed-popup"
+          textId={
+            Array.isArray(modesWithNoBicycle) &&
+            modesWithNoBicycle.includes('RAIL')
+              ? 'no-bike-allowed-popup-train'
+              : 'no-bike-allowed-popup-tram-bus'
+          }
           icon="caution"
           togglePopUp={this.togglePopUp}
         />
@@ -291,6 +186,10 @@ class QuickSettingsPanel extends React.Component {
           />
           <div className="select-wrapper">
             <select
+              aria-label={this.context.intl.formatMessage({
+                id: 'arrive-leave',
+                defaultMessage: 'Arrive or leave at selected time',
+              })}
               className="arrive"
               value={arriveBy}
               onChange={this.setArriveBy}

@@ -8,6 +8,7 @@ import defaultConfig from '../../../app/configurations/config.default';
 import { getDefaultModes } from '../../../app/util/modeUtils';
 import * as utils from '../../../app/util/queryUtils';
 import { OptimizeType } from '../../../app/constants';
+import { PREFIX_ITINERARY_SUMMARY } from '../../../app/util/path';
 
 describe('queryUtils', () => {
   describe('getIntermediatePlaces', () => {
@@ -268,7 +269,9 @@ describe('queryUtils', () => {
       const router = createMemoryHistory();
       utils.addPreferredRoute(router, 'HSL__1052');
       utils.removePreferredRoute(router, 'HSL__1052');
-      expect(router.getCurrentLocation().query).to.deep.equal({});
+      expect(router.getCurrentLocation().query).to.deep.equal({
+        preferredRoutes: '',
+      });
     });
 
     it('should ignore a missing preferred route', () => {
@@ -286,7 +289,9 @@ describe('queryUtils', () => {
       const router = createMemoryHistory();
       utils.addUnpreferredRoute(router, 'HSL__1052');
       utils.removeUnpreferredRoute(router, 'HSL__1052');
-      expect(router.getCurrentLocation().query).to.deep.equal({});
+      expect(router.getCurrentLocation().query).to.deep.equal({
+        unpreferredRoutes: '',
+      });
     });
 
     it('should ignore a missing Unpreferred route', () => {
@@ -338,23 +343,21 @@ describe('queryUtils', () => {
 
     it('should remove selected itinerary index from url', () => {
       let location = {
-        pathname:
-          '/reitti/Helsinki%2C Helsinki%3A%3A60.166641%2C24.943537/Espoo%2C Espoo%3A%3A60.206376%2C24.656729/1',
+        pathname: `/${PREFIX_ITINERARY_SUMMARY}/Helsinki%2C Helsinki%3A%3A60.166641%2C24.943537/Espoo%2C Espoo%3A%3A60.206376%2C24.656729/1`,
       };
       location = utils.resetSelectedItineraryIndex(location);
       expect(location.pathname).to.equal(
-        '/reitti/Helsinki%2C Helsinki%3A%3A60.166641%2C24.943537/Espoo%2C Espoo%3A%3A60.206376%2C24.656729',
+        `/${PREFIX_ITINERARY_SUMMARY}/Helsinki%2C Helsinki%3A%3A60.166641%2C24.943537/Espoo%2C Espoo%3A%3A60.206376%2C24.656729`,
       );
     });
 
     it('should not modify url without itinerary index', () => {
       let location = {
-        pathname:
-          '/reitti/Helsinki%2C Helsinki%3A%3A60.166641%2C24.943537/Espoo%2C Espoo%3A%3A60.206376%2C24.656729',
+        pathname: `/${PREFIX_ITINERARY_SUMMARY}/Helsinki%2C Helsinki%3A%3A60.166641%2C24.943537/Espoo%2C Espoo%3A%3A60.206376%2C24.656729`,
       };
       location = utils.resetSelectedItineraryIndex(location);
       expect(location.pathname).to.equal(
-        '/reitti/Helsinki%2C Helsinki%3A%3A60.166641%2C24.943537/Espoo%2C Espoo%3A%3A60.206376%2C24.656729',
+        `/${PREFIX_ITINERARY_SUMMARY}/Helsinki%2C Helsinki%3A%3A60.166641%2C24.943537/Espoo%2C Espoo%3A%3A60.206376%2C24.656729`,
       );
     });
   });

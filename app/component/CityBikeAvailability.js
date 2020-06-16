@@ -7,7 +7,13 @@ import Availability from './Availability';
 import ComponentUsageExample from './ComponentUsageExample';
 
 const CityBikeAvailability = mapProps(
-  ({ bikesAvailable, totalSpaces, fewAvailableCount }) => {
+  ({
+    bikesAvailable,
+    totalSpaces,
+    fewAvailableCount,
+    type,
+    useSpacesAvailable,
+  }) => {
     const total = Number.isNaN(totalSpaces) ? 0 : totalSpaces;
     const available = Number.isNaN(bikesAvailable) ? 0 : bikesAvailable;
 
@@ -18,13 +24,17 @@ const CityBikeAvailability = mapProps(
       text: (
         <p className="sub-header-h4 availability-header">
           <FormattedMessage
-            id="bike-availability"
+            id={
+              type === 'scooter' ? 'scooter-availability' : 'bike-availability'
+            }
             defaultMessage="Bikes available at the station right now"
           />
           {'\u00a0'}
-          ({available}/{total})
+          ({available}
+          {useSpacesAvailable && <React.Fragment>/{total}</React.Fragment>})
         </p>
       ),
+      showStatusBar: useSpacesAvailable,
     };
   },
 )(Availability);
@@ -39,6 +49,8 @@ CityBikeAvailability.description = () => (
         bikesAvailable={1}
         totalSpaces={3}
         fewAvailableCount={3}
+        type="citybike"
+        useSpacesAvailable
       />
     </ComponentUsageExample>
   </div>
@@ -48,6 +60,8 @@ CityBikeAvailability.propTypes = {
   bikesAvailable: PropTypes.number.isRequired,
   totalSpaces: PropTypes.number.isRequired,
   fewAvailableCount: PropTypes.number.isRequired,
+  type: PropTypes.string.isRequired,
+  useSpacesAvailable: PropTypes.bool.isRequired,
 };
 
 export default CityBikeAvailability;

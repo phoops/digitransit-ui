@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { intlShape } from 'react-intl';
 import { routerShape } from 'react-router';
-
+import { withCurrentTime } from '../util/searchUtils';
+import ComponentUsageExample from './ComponentUsageExample';
 import DTAutosuggestPanel from './DTAutosuggestPanel';
 import { PREFIX_ITINERARY_SUMMARY, navigateTo } from '../util/path';
 import {
@@ -17,25 +18,27 @@ const locationToOtp = location =>
     location.locationSlack ? `::${location.locationSlack}` : ''
   }`;
 
-export default class OriginDestinationBar extends React.Component {
+class OriginDestinationBar extends React.Component {
   static propTypes = {
     className: PropTypes.string,
-    origin: dtLocationShape,
     destination: dtLocationShape,
+    location: PropTypes.object,
+    origin: dtLocationShape,
   };
 
   static contextTypes = {
     intl: intlShape.isRequired,
     router: routerShape.isRequired,
-    piwik: PropTypes.object,
+    getStore: PropTypes.func.isRequired,
   };
 
   static defaultProps = {
     className: undefined,
+    location: undefined,
   };
 
   get location() {
-    return this.context.router.getCurrentLocation();
+    return this.props.location || this.context.router.getCurrentLocation();
   }
 
   updateViaPoints = newViaPoints =>
@@ -43,12 +46,13 @@ export default class OriginDestinationBar extends React.Component {
 
   swapEndpoints = () => {
     const { location } = this;
+    const locationWithTime = withCurrentTime(this.context.getStore, location);
     const intermediatePlaces = getIntermediatePlaces(location.query);
     if (intermediatePlaces.length > 1) {
       location.query.intermediatePlaces.reverse();
     }
     navigateTo({
-      base: location,
+      base: locationWithTime,
       origin: this.props.destination,
       destination: this.props.origin,
       context: PREFIX_ITINERARY_SUMMARY,
@@ -76,3 +80,39 @@ export default class OriginDestinationBar extends React.Component {
     </div>
   );
 }
+
+OriginDestinationBar.description = (
+  <React.Fragment>
+    <ComponentUsageExample>
+      <OriginDestinationBar
+        destination={{ ready: false, set: false }}
+        origin={{
+          address: 'Messukeskus, Itä-Pasila, Helsinki',
+          lat: 60.201415,
+          lon: 24.936696,
+          ready: true,
+          set: true,
+        }}
+      />
+    </ComponentUsageExample>
+    <ComponentUsageExample description="with-viapoint">
+      <OriginDestinationBar
+        destination={{ ready: false, set: false }}
+        location={{
+          query: {
+            intermediatePlaces: 'Opastinsilta 6, Helsinki::60.199093,24.940536',
+          },
+        }}
+        origin={{
+          address: 'Messukeskus, Itä-Pasila, Helsinki',
+          lat: 60.201415,
+          lon: 24.936696,
+          ready: true,
+          set: true,
+        }}
+      />
+    </ComponentUsageExample>
+  </React.Fragment>
+);
+
+export default OriginDestinationBar;

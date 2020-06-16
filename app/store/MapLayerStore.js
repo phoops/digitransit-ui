@@ -22,6 +22,8 @@ class MapLayerStore extends Store {
       servicePoint: true,
       ticketMachine: true,
     },
+    showAllBusses: false,
+    geoJson: {},
   };
 
   static handlers = {
@@ -42,7 +44,10 @@ class MapLayerStore extends Store {
 
     const storedMapLayers = getMapLayerSettings();
     if (Object.keys(storedMapLayers).length > 0) {
-      this.mapLayers = { ...storedMapLayers };
+      this.mapLayers = {
+        ...this.mapLayers,
+        ...storedMapLayers,
+      };
     }
   }
 
@@ -78,6 +83,8 @@ export const mapLayerShape = PropTypes.shape({
     servicePoint: PropTypes.bool,
     ticketMachine: PropTypes.bool,
   }).isRequired,
+  showAllBusses: PropTypes.bool,
+  geoJson: PropTypes.object,
 });
 
 export default MapLayerStore;

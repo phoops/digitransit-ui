@@ -8,13 +8,22 @@ import Icon from './Icon';
 import ComponentUsageExample from './ComponentUsageExample';
 import LangSelect from './LangSelect';
 import MessageBar from './MessageBar';
-import { isBrowser } from '../util/browser';
+import CanceledLegsBar from './CanceledLegsBar';
+import LogoSmall from './LogoSmall';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
+import LoginButton from './LoginButton';
+import UserInfo from './UserInfo';
 
 const AppBarLarge = (
-  { titleClicked, logo },
+  { titleClicked, logo, user },
   { router, location, config, intl },
 ) => {
   const openDisruptionInfo = () => {
+    addAnalyticsEvent({
+      category: 'Navigation',
+      action: 'OpenDisruptions',
+      name: null,
+    });
     router.push({
       ...location,
       state: {
@@ -25,40 +34,82 @@ const AppBarLarge = (
   };
 
   let logoElement;
-
   if (config.textLogo) {
     logoElement = (
       <section className="title">
-        <span className="title">{config.title}</span>
+        <LogoSmall className="navi-logo" title={config.title} />
       </section>
     );
-  } else if (isBrowser && logo) {
-    logoElement = (
-      <div className="navi-logo" style={{ backgroundImage: `url(${logo})` }} />
-    );
   } else {
-    logoElement = (
-      <div className="navi-logo" style={{ backgroundImage: 'none' }} />
-    );
+    logoElement = <LogoSmall className="navi-logo" logo={logo} showLogo />;
   }
 
   /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/anchor-is-valid */
   return (
     <div>
       <div className="top-bar bp-large flex-horizontal">
-        <button className="noborder" onClick={titleClicked}>
+        <button
+          className="noborder"
+          onClick={e => {
+            titleClicked(e);
+            addAnalyticsEvent({
+              category: 'Navigation',
+              action: 'Home',
+              name: null,
+            });
+          }}
+        >
           {logoElement}
         </button>
         <div className="empty-space flex-grow" />
+        {config.showLogin &&
+          (!user.name ? (
+            <LoginButton />
+          ) : (
+            <UserInfo
+              user={user}
+              list={[
+                {
+                  key: 'dropdown-item-1',
+                  messageId: 'logout',
+                  href: '/logout',
+                },
+              ]}
+            />
+          ))}
+
         <div className="navi-languages right-border navi-margin">
           <LangSelect />
         </div>
+        <div className="navi-icons navi-margin padding-horizontal-large">
+          <a
+            className="noborder"
+            onClick={openDisruptionInfo}
+            aria-label={intl.formatMessage({
+              id: 'disruptions',
+              defaultMessage: 'Disruptions',
+            })}
+          >
+            <Icon img="icon-icon_caution" className="caution-topbar" />
+          </a>
+        </div>
         <div className="padding-horizontal-large navi-margin">
-          <ExternalLink className="external-top-bar" {...config.appBarLink} />
+          <ExternalLink
+            className="external-top-bar"
+            {...config.appBarLink}
+            onClick={() => {
+              addAnalyticsEvent({
+                category: 'Navigation',
+                action: 'OpenServiceHomeLink',
+                name: null,
+              });
+            }}
+          />
         </div>
       </div>
       <MessageBar />
       <DisruptionInfo />
+      <CanceledLegsBar />
     </div>
   );
 };
@@ -66,6 +117,7 @@ const AppBarLarge = (
 AppBarLarge.propTypes = {
   titleClicked: PropTypes.func.isRequired,
   logo: PropTypes.string,
+  user: PropTypes.object,
 };
 
 AppBarLarge.defaultProps = {
@@ -90,4 +142,4 @@ AppBarLarge.description = () => (
   </div>
 );
 
-export default AppBarLarge;
+export { AppBarLarge as default, AppBarLarge as Component };

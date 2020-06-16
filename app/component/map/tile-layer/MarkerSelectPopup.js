@@ -8,6 +8,7 @@ import SelectCityBikeRow from './SelectCityBikeRow';
 import SelectParkAndRideRow from './SelectParkAndRideRow';
 import SelectTicketSalesRow from './SelectTicketSalesRow';
 import ComponentUsageExample from '../../ComponentUsageExample';
+import MarkerPopupBottom from '../MarkerPopupBottom';
 import { options } from '../../ExampleData';
 
 function MarkerSelectPopup(props) {
@@ -20,7 +21,8 @@ function MarkerSelectPopup(props) {
           selectRow={() => props.selectRow(option)}
         />
       );
-    } else if (option.layer === 'stop') {
+    }
+    if (option.layer === 'stop') {
       return (
         <SelectStopRow
           {...option.feature.properties}
@@ -28,15 +30,17 @@ function MarkerSelectPopup(props) {
           selectRow={() => props.selectRow(option)}
         />
       );
-    } else if (option.layer === 'citybike') {
+    }
+    if (option.layer === 'citybike') {
       return (
         <SelectCityBikeRow
           {...option.feature.properties}
-          key={option.feature.properties.stationId}
+          key={`citybike:${option.feature.properties.id}`}
           selectRow={() => props.selectRow(option)}
         />
       );
-    } else if (option.layer === 'parkAndRide') {
+    }
+    if (option.layer === 'parkAndRide') {
       return (
         <SelectParkAndRideRow
           {...option.feature.properties}
@@ -44,11 +48,12 @@ function MarkerSelectPopup(props) {
           selectRow={() => props.selectRow(option)}
         />
       );
-    } else if (option.layer === 'ticketSales') {
+    }
+    if (option.layer === 'ticketSales') {
       return (
         <SelectTicketSalesRow
           {...option.feature.properties}
-          key={option.feature.properties.FID}
+          key={option.feature.properties.NID_fi}
           selectRow={() => props.selectRow(option)}
         />
       );
@@ -63,6 +68,17 @@ function MarkerSelectPopup(props) {
       </h3>
       <hr className="no-margin gray" />
       <div className="scrollable momentum-scroll card-row">{rows}</div>
+      <div>
+        <MarkerPopupBottom
+          location={{
+            address:
+              props.options[0].feature.properties.name ||
+              props.options[0].feature.properties.Name_fi,
+            lat: props.location.lat,
+            lon: props.location.lng,
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -70,10 +86,18 @@ function MarkerSelectPopup(props) {
 MarkerSelectPopup.displayName = 'MarkerSelectPopup';
 
 MarkerSelectPopup.description = (
-  <div>
+  <div className="popup">
     <p>Renders a marker select popup</p>
     <ComponentUsageExample description="">
-      <MarkerSelectPopup options={options} selectRow={() => {}} />
+      <MarkerSelectPopup
+        options={options}
+        selectRow={() => {}}
+        location={{
+          lat: 60.169522909062366,
+          lng: 24.933385848999027,
+          address: 'Kamppi (kaukoliikenneterminaali)',
+        }}
+      />
     </ComponentUsageExample>
   </div>
 );
@@ -81,6 +105,7 @@ MarkerSelectPopup.description = (
 MarkerSelectPopup.propTypes = {
   options: PropTypes.array.isRequired,
   selectRow: PropTypes.func.isRequired, // eslint-disable-line react/no-unused-prop-types
+  location: PropTypes.object.isRequired,
 };
 
 export default MarkerSelectPopup;

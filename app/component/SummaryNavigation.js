@@ -9,8 +9,9 @@ import QuickSettingsPanel from './QuickSettingsPanel';
 import StreetModeSelectorPanel from './StreetModeSelectorPanel';
 import { getDrawerWidth, isBrowser } from '../util/browser';
 import * as ModeUtils from '../util/modeUtils';
-import { parseLocation } from '../util/path';
+import { parseLocation, PREFIX_ITINERARY_SUMMARY } from '../util/path';
 import withBreakpoint from '../util/withBreakpoint';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 class SummaryNavigation extends React.Component {
   static propTypes = {
@@ -34,9 +35,13 @@ class SummaryNavigation extends React.Component {
 
   static contextTypes = {
     config: PropTypes.object.isRequired,
-    piwik: PropTypes.object,
     router: routerShape,
     location: PropTypes.object.isRequired,
+  };
+
+  customizeSearchModules = {
+    Drawer: () => importLazy(import('material-ui/Drawer')),
+    CustomizeSearch: () => importLazy(import('./CustomizeSearchNew')),
   };
 
   componentDidMount() {
@@ -46,7 +51,7 @@ class SummaryNavigation extends React.Component {
         this.context.location.state.customizeSearchOffcanvas &&
         (!location.state || !location.state.customizeSearchOffcanvas) &&
         !this.transitionDone &&
-        location.pathname.startsWith('/reitti/')
+        location.pathname.startsWith(`/${PREFIX_ITINERARY_SUMMARY}/`)
       ) {
         this.transitionDone = true;
         const newLocation = {
@@ -76,24 +81,17 @@ class SummaryNavigation extends React.Component {
       this.context.location.state.customizeSearchOffcanvas) ||
     false;
 
-  customizeSearchModules = {
-    Drawer: () => importLazy(import('material-ui/Drawer')),
-    CustomizeSearch: () => importLazy(import('./CustomizeSearchNew')),
-  };
-
   toggleCustomizeSearchOffcanvas = () => {
     this.internalSetOffcanvas(!this.getOffcanvasState());
   };
 
   internalSetOffcanvas = newState => {
-    if (this.context.piwik != null) {
-      this.context.piwik.trackEvent(
-        'ItinerarySettings',
-        'ExtraSettingsPanelClick',
-        newState ? 'ExtraSettingsPanelOpen' : 'ExtraSettingsPanelClose',
-      );
-    }
-
+    addAnalyticsEvent({
+      event: 'sendMatomoEvent',
+      category: 'ItinerarySettings',
+      action: 'ExtraSettingsPanelClick',
+      name: newState ? 'ExtraSettingsPanelOpen' : 'ExtraSettingsPanelClose',
+    });
     if (newState) {
       this.context.router.push({
         ...this.context.location,
@@ -111,9 +109,14 @@ class SummaryNavigation extends React.Component {
     <div className="street-mode-selector-panel-container">
       <StreetModeSelectorPanel
         selectedStreetMode={ModeUtils.getStreetMode(router.location, config)}
-        selectStreetMode={(streetMode, isExclusive) =>
-          ModeUtils.setStreetMode(streetMode, config, router, isExclusive)
-        }
+        selectStreetMode={(streetMode, isExclusive) => {
+          ModeUtils.setStreetMode(streetMode, config, router, isExclusive);
+          addAnalyticsEvent({
+            action: 'SelectTravelingModeFromQuickSettings',
+            category: 'ItinerarySettings',
+            name: streetMode,
+          });
+        }}
         streetModeConfigs={ModeUtils.getAvailableStreetModeConfigs(config)}
       />
     </div>
@@ -155,12 +158,16 @@ class SummaryNavigation extends React.Component {
               containerStyle={{
                 background: 'transparent',
                 boxShadow: 'none',
-                ...(isOpen && { MozTransform: 'none' }), // needed to prevent showing an extra scrollbar in FF
+                overflow: 'visible',
+              }}
+              style={{
+                // hide root element from screen reader in sync with drawer animation
+                transition: 'visibility 450ms',
+                visibility: isOpen ? 'visible' : 'hidden',
               }}
               width={getDrawerWidth(window)}
             >
               <CustomizeSearch
-                isOpen={isOpen}
                 params={this.props.params}
                 onToggleClick={this.toggleCustomizeSearchOffcanvas}
               />

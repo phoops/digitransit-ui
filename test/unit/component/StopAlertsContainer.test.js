@@ -3,66 +3,140 @@ import { describe, it } from 'mocha';
 import React from 'react';
 
 import { shallowWithIntl } from '../helpers/mock-intl-enzyme';
+import { AlertSeverityLevelType } from '../../../app/constants';
+import AlertList from '../../../app/component/AlertList';
 import { Component as StopAlertsContainer } from '../../../app/component/StopAlertsContainer';
-import RouteAlertsContainer from '../../../app/component/RouteAlertsContainer';
-
-import data from '../test-data/StopAlertsContainer.data';
 
 describe('<StopAlertsContainer />', () => {
-  it('should show a "no alerts" message', () => {
-    const props = {
-      ...data.withoutAlerts,
-    };
-    const wrapper = shallowWithIntl(<StopAlertsContainer {...props} />);
-    expect(wrapper.find('.no-stop-alerts-message')).to.have.lengthOf(1);
-  });
-
-  it('should show all the alerts', () => {
-    const props = {
-      ...data.withAlerts,
-    };
-    const wrapper = shallowWithIntl(<StopAlertsContainer {...props} />);
-    expect(wrapper.find(RouteAlertsContainer)).to.have.lengthOf(18);
-  });
-
-  it('should order the alerts by route shortName', () => {
+  it("should indicate that there are no alerts if the stop's routes have no alerts and the stop has no canceled stoptimes", () => {
     const props = {
       stop: {
-        stoptimesForPatterns: [
+        code: '321',
+        alerts: [],
+        stoptimes: [
           {
-            pattern: {
-              code: 'second',
+            headsign: 'Kamppi',
+            realtimeState: 'SCHEDULED',
+            trip: {
               route: {
-                alerts: [{}],
-                shortName: '37N',
+                alerts: [],
+                mode: 'BUS',
+                shortName: '63',
               },
+              stops: [
+                {
+                  name: 'Saramäentie',
+                },
+              ],
             },
           },
+        ],
+      },
+    };
+    const wrapper = shallowWithIntl(<StopAlertsContainer {...props} />);
+    expect(wrapper.find(AlertList).props()).to.deep.equal({
+      cancelations: [],
+      serviceAlerts: [],
+      showRouteNameLink: false,
+    });
+  });
+
+  it('should indicate that there is a service alert on a route', () => {
+    const props = {
+      stop: {
+        code: '321',
+        alerts: [],
+        stoptimes: [
           {
-            pattern: {
-              code: 'fourth',
+            headsign: 'Kamppi',
+            realtimeState: 'SCHEDULED',
+            trip: {
               route: {
                 alerts: [{}],
-                shortName: 'A',
+                mode: 'BUS',
+                shortName: '63',
               },
+              stops: [
+                {
+                  name: 'Saramäentie',
+                },
+              ],
             },
           },
+        ],
+      },
+    };
+    const wrapper = shallowWithIntl(<StopAlertsContainer {...props} />);
+    expect(wrapper.find(AlertList).prop('serviceAlerts')).to.have.lengthOf(1);
+  });
+
+  it('should indicate that there is a canceled stoptime on a route', () => {
+    const props = {
+      stop: {
+        code: '431',
+        alerts: [],
+        stoptimes: [
           {
-            pattern: {
-              code: 'third',
+            headsign: 'Kamppi',
+            realtimeState: 'CANCELED',
+            trip: {
               route: {
-                alerts: [{}],
-                shortName: '138',
+                alerts: [],
+                mode: 'BUS',
+                shortName: '63',
               },
+              stops: [
+                {
+                  name: 'Saramäentie',
+                },
+              ],
             },
           },
+        ],
+      },
+    };
+    const wrapper = shallowWithIntl(<StopAlertsContainer {...props} />);
+    expect(wrapper.find(AlertList).prop('cancelations')).to.have.lengthOf(1);
+  });
+
+  it('should indicate that the stop itself has a service alert', () => {
+    const props = {
+      stop: {
+        code: '321',
+        alerts: [
           {
-            pattern: {
-              code: 'first',
+            alertSeverityLevel: AlertSeverityLevelType.Warning,
+          },
+        ],
+        stoptimes: [],
+      },
+    };
+    const wrapper = shallowWithIntl(<StopAlertsContainer {...props} />);
+    expect(wrapper.find(AlertList).prop('serviceAlerts')).to.have.lengthOf(1);
+  });
+
+  it('should use the stoptime as the startTime for validityPeriod', () => {
+    const props = {
+      stop: {
+        code: '321',
+        alerts: [],
+        stoptimes: [
+          {
+            headsign: 'Kamppi',
+            realtimeState: 'CANCELED',
+            serviceDay: 1,
+            scheduledDeparture: 2,
+            trip: {
               route: {
-                alerts: [{}],
-                shortName: '8A',
+                alerts: [],
+                mode: 'BUS',
+                shortName: '63',
               },
+              stops: [
+                {
+                  name: 'Saramäentie',
+                },
+              ],
             },
           },
         ],
@@ -70,28 +144,52 @@ describe('<StopAlertsContainer />', () => {
     };
     const wrapper = shallowWithIntl(<StopAlertsContainer {...props} />);
     expect(
-      wrapper
-        .find(RouteAlertsContainer)
-        .at(0)
-        .props().patternId,
-    ).to.equal('first');
-    expect(
-      wrapper
-        .find(RouteAlertsContainer)
-        .at(1)
-        .props().patternId,
-    ).to.equal('second');
-    expect(
-      wrapper
-        .find(RouteAlertsContainer)
-        .at(2)
-        .props().patternId,
-    ).to.equal('third');
-    expect(
-      wrapper
-        .find(RouteAlertsContainer)
-        .at(3)
-        .props().patternId,
-    ).to.equal('fourth');
+      wrapper.find(AlertList).prop('cancelations')[0].validityPeriod.startTime,
+    ).to.equal(3);
+  });
+
+  it('should omit duplicate route alerts', () => {
+    const props = {
+      stop: {
+        code: '321',
+        alerts: [],
+        stoptimes: [
+          {
+            headsign: 'Kamppi',
+            realtimeState: 'SCHEDULED',
+            trip: {
+              route: {
+                alerts: [{}],
+                mode: 'BUS',
+                shortName: '63',
+              },
+              stops: [
+                {
+                  name: 'Saramäentie',
+                },
+              ],
+            },
+          },
+          {
+            headsign: 'Paloheinä',
+            realtimeState: 'SCHEDULED',
+            trip: {
+              route: {
+                alerts: [{}],
+                mode: 'BUS',
+                shortName: '63',
+              },
+              stops: [
+                {
+                  name: 'Saramäentie',
+                },
+              ],
+            },
+          },
+        ],
+      },
+    };
+    const wrapper = shallowWithIntl(<StopAlertsContainer {...props} />);
+    expect(wrapper.find(AlertList).prop('serviceAlerts')).to.have.lengthOf(1);
   });
 });

@@ -34,6 +34,7 @@ function setItem(key, value) {
       localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
       if (error.name === 'QuotaExceededError') {
+        // eslint-disable-next-line no-console
         console.log(
           '[localStorage]' + // eslint-disable-line no-console
             ' Unable to save state; localStorage is not available in Safari private mode',
@@ -130,6 +131,10 @@ export function setCustomizedSettings(data) {
       oldSettings.walkReluctance,
     ),
     walkSpeed: getNumberValueOrDefault(data.walkSpeed, oldSettings.walkSpeed),
+    allowedBikeRentalNetworks: getValueOrDefault(
+      data.allowedBikeRentalNetworks,
+      oldSettings.allowedBikeRentalNetworks,
+    ),
   };
   if (optimize === OptimizeType.Triangle) {
     newSettings.safetyFactor = getNumberValueOrDefault(
@@ -148,6 +153,18 @@ export function setCustomizedSettings(data) {
     delete newSettings.safetyFactor;
     delete newSettings.slopeFactor;
     delete newSettings.timeFactor;
+  }
+  if (
+    newSettings.preferredRoutes !== undefined &&
+    newSettings.preferredRoutes.length === 0
+  ) {
+    delete newSettings.preferredRoutes;
+  }
+  if (
+    newSettings.unpreferredRoutes !== undefined &&
+    newSettings.unpreferredRoutes.length === 0
+  ) {
+    delete newSettings.unpreferredRoutes;
   }
 
   setItem('customizedSettings', newSettings);
@@ -245,6 +262,14 @@ export function resetRoutingSettings() {
   }
 }
 
+export function getFavouriteStorage() {
+  return getItemAsJson('favouriteStore');
+}
+
+export function setFavouriteStorage(data) {
+  return setItem('favouriteStore', data);
+}
+
 export function getFavouriteLocationsStorage() {
   return getItemAsJson('favouriteLocations');
 }
@@ -336,3 +361,26 @@ export const setMapLayerSettings = settings => {
 };
 
 export const getMapLayerSettings = () => getItemAsJson('map-layers', '{}');
+
+/**
+ * Sets the seen state of the given dialog.
+ *
+ * @param {string} dialogId The identifier of the dialog. Will be ignored if falsey.
+ * @param {boolean} seen Whether the dialog has been seen. Defaults to true.
+ */
+export const setDialogState = (dialogId, seen = true) => {
+  if (!dialogId) {
+    return;
+  }
+  const dialogStates = getItemAsJson('dialogState', '{}');
+  dialogStates[`${dialogId}`] = seen;
+  setItem('dialogState', dialogStates);
+};
+
+/**
+ * Checks if the given dialog has been seen by the user.
+ *
+ * @param {string} dialogId The identifier of the dialog.
+ */
+export const getDialogState = dialogId =>
+  getItemAsJson('dialogState', '{}')[`${dialogId}`] === true;

@@ -10,15 +10,14 @@ export function getIcon(type) {
   switch (type) {
     case 'Palvelupiste':
       return 'icon-icon_service-point';
-    case 'HSL Automaatti MNL':
+    case 'Monilippuautomaatti':
       return 'icon-icon_ticket-machine';
-    case 'HSL Automaatti KL':
+    case 'Kertalippuautomaatti':
       return 'icon-icon_ticket-machine-single';
     case 'Myyntipiste':
       return 'icon-icon_ticket-sales-point';
-    case 'R-kioski':
-      return 'icon-icon_ticket-sales-point';
     default:
+      // eslint-disable-next-line no-console
       console.log(`Unknown ticket sales type: ${type}`);
       return 'icon-icon_ticket-sales-point';
   }
@@ -27,17 +26,17 @@ export function getIcon(type) {
 function TicketSalesPopup(props) {
   return (
     <div className="card">
-      <Card className="padding-small">
+      <Card className="card-padding">
         <CardHeader
-          name={props.NIMI}
-          description={props.OSOITE}
-          icon={getIcon(props.TYYPPI)}
+          name={props.Name_fi}
+          description={props.Address_fi}
+          icon={getIcon(props.Tyyppi)}
           unlinked
         />
       </Card>
       <MarkerPopupBottom
         location={{
-          address: props.NIMI,
+          address: props.Name_fi,
           lat: props.LAT,
           lon: props.LON,
         }}
@@ -56,9 +55,9 @@ TicketSalesPopup.description = (
 );
 
 TicketSalesPopup.propTypes = {
-  TYYPPI: PropTypes.string.isRequired,
-  NIMI: PropTypes.string.isRequired,
-  OSOITE: PropTypes.string.isRequired,
+  Tyyppi: PropTypes.string.isRequired,
+  Name_fi: PropTypes.string.isRequired,
+  Address_fi: PropTypes.string.isRequired,
   LAT: PropTypes.number.isRequired,
   LON: PropTypes.number.isRequired,
 };

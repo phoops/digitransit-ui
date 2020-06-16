@@ -13,7 +13,7 @@ import { getJson } from './xhrPromise';
 import { distance } from './geo-utils';
 import { uniqByLabel, isStop } from './suggestionUtils';
 import mapPeliasModality from './pelias-to-modality-mapper';
-import { PREFIX_ROUTES } from '../util/path';
+import { PREFIX_ROUTES, PREFIX_STOPS } from './path';
 
 import mapboxToPeliasFeaturs from './mapbox-to-pelias-features';
 
@@ -55,8 +55,20 @@ function getRelayQuery(query) {
   });
 }
 
+export const tryGetRelayQuery = async (query, defaultValue) => {
+  try {
+    return getRelayQuery(query) || defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
 const mapRoute = item => {
-  const link = `/${PREFIX_ROUTES}/${item.gtfsId}/pysakit/${
+  if (item === null || item === undefined) {
+    return null;
+  }
+
+  const link = `/${PREFIX_ROUTES}/${item.gtfsId}/${PREFIX_STOPS}/${
     orderBy(item.patterns, 'code', ['asc'])[0].code
   }`;
 
@@ -262,13 +274,13 @@ function getOldSearches(oldSearches, input, dropLayers) {
 function getFavouriteLocations(favourites, input) {
   return Promise.resolve(
     orderBy(
-      filterMatchingToInput(favourites, input, ['address', 'locationName']),
-      feature => feature.locationName,
+      filterMatchingToInput(favourites, input, ['address', 'name']),
+      feature => feature.name,
     ).map(item => ({
       type: 'FavouritePlace',
       properties: {
         ...item,
-        label: item.locationName,
+        label: item.name,
         layer: 'favouritePlace',
       },
       geometry: { type: 'Point', coordinates: [item.lon, item.lat] },
@@ -301,8 +313,8 @@ export function getGeocodingResult(
     opts = { ...opts, sources };
   }
 
-  return getJson(config.URL.PELIAS, opts).then(response =>
-    mapPeliasModality(response.features, config),
+  return getJson(`${config.URL.GEOCODING_BASE_URL}/search`, opts).then(
+    response => mapPeliasModality(response.features, config),
   );
 }
 
@@ -342,6 +354,12 @@ export function getMapboxGeocodingResult(
 
 }
 
+export function searchPlace(ids, config) {
+  return getJson(`${config.URL.GEOCODING_BASE_URL}/place`, {
+    ids,
+  });
+}
+
 function getFavouriteRoutes(favourites, input) {
   const query = Relay.createQuery(
     Relay.QL`
@@ -357,9 +375,9 @@ function getFavouriteRoutes(favourites, input) {
     }`,
     { ids: favourites },
   );
-
   return getRelayQuery(query)
     .then(favouriteRoutes => favouriteRoutes.map(mapRoute))
+    .then(routes => routes.filter(route => !!route))
     .then(routes =>
       routes.map(favourite => ({
         ...favourite,
@@ -418,7 +436,7 @@ function getFavouriteStops(favourites, input, origin) {
           type: 'FavouriteStop',
           properties: {
             ...stop,
-            label: stop.locationName,
+            label: stop.name,
             layer: isStop(stop) ? 'favouriteStop' : 'favouriteStation',
           },
           geometry: {
@@ -429,7 +447,7 @@ function getFavouriteStops(favourites, input, origin) {
     )
     .then(stops =>
       filterMatchingToInput(stops, input, [
-        'properties.locationName',
+        'properties.name',
         'properties.name',
         'properties.address',
       ]),
@@ -458,9 +476,9 @@ function getRoutes(input, config) {
 
   const query = Relay.createQuery(
     Relay.QL`
-    query routes($name: String) {
+    query routes($feeds: [String!]!, $name: String) {
       viewer {
-        routes(name: $name ) {
+        routes(feeds: $feeds, name: $name ) {
           gtfsId
           agency {name}
           shortName
@@ -472,18 +490,20 @@ function getRoutes(input, config) {
         }
       }
     }`,
-    { name: input },
+    {
+      feeds:
+        Array.isArray(config.feedIds) && config.feedIds.length > 0
+          ? config.feedIds
+          : null,
+      name: input,
+    },
   );
 
   return getRelayQuery(query)
     .then(data =>
       data[0].routes
-        .filter(
-          item =>
-            config.feedIds === undefined ||
-            config.feedIds.indexOf(item.gtfsId.split(':')[0]) > -1,
-        )
         .map(mapRoute)
+        .filter(route => !!route)
         .sort((x, y) => routeNameCompare(x.properties, y.properties)),
     )
     .then(suggestions => take(suggestions, 10));
@@ -659,11 +679,9 @@ export function executeSearchImmediate(
   const endpointLayers = layers || getAllEndpointLayers();
 
   if (type === SearchType.Endpoint || type === SearchType.All) {
-    const favouriteLocations = getStore(
-      'FavouriteLocationStore',
-    ).getLocations();
+    const favouriteLocations = getStore('FavouriteStore').getLocations();
     const oldSearches = getStore('OldSearchesStore').getOldSearches('endpoint');
-    const favouriteStops = getStore('FavouriteStopsStore').getStops();
+    const favouriteStops = getStore('FavouriteStore').getStopsAndStations();
     const language = getStore('PreferencesStore').getLanguage();
     const searchComponents = [];
 
@@ -786,8 +804,7 @@ export function executeSearchImmediate(
 
   if (type === SearchType.Search || type === SearchType.All) {
     const oldSearches = getStore('OldSearchesStore').getOldSearches('search');
-    const favouriteRoutes = getStore('FavouriteRoutesStore').getRoutes();
-
+    const favouriteRoutes = getStore('FavouriteStore').getRoutes();
     searchSearchesPromise = Promise.all([
       getFavouriteRoutes(favouriteRoutes, input),
       getOldSearches(oldSearches, input),
@@ -852,6 +869,10 @@ export const withCurrentTime = (getStore, location) => {
   };
 };
 
+export function reverseGeocode(opts, config) {
+  return getJson(`${config.URL.GEOCODING_BASE_URL}/reverse`, opts);
+}
+
 function buildQueryString(params) {
   let queryString = "";
   for (const key in params) {
@@ -862,4 +883,3 @@ function buildQueryString(params) {
 
   return encodeURI(queryString.slice(0, -1));
 }
-

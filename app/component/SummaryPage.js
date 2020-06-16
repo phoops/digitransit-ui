@@ -2,7 +2,9 @@ import PropTypes from 'prop-types';
 /* eslint-disable react/no-array-index-key */
 import React from 'react';
 import Relay from 'react-relay/classic';
+import cookie from 'react-cookie';
 import moment from 'moment';
+import findIndex from 'lodash/findIndex';
 import get from 'lodash/get';
 import sortBy from 'lodash/sortBy';
 import some from 'lodash/some';
@@ -12,15 +14,15 @@ import { routerShape } from 'react-router';
 import isEqual from 'lodash/isEqual';
 import { dtLocationShape } from '../util/shapes';
 import storeOrigin from '../action/originActions';
-import DesktopView from '../component/DesktopView';
-import MobileView from '../component/MobileView';
-import MapContainer from '../component/map/MapContainer';
+import DesktopView from './DesktopView';
+import MobileView from './MobileView';
+import MapContainer from './map/MapContainer';
 import ItineraryTab from './ItineraryTab';
 import PrintableItinerary from './PrintableItinerary';
 import SummaryPlanContainer from './SummaryPlanContainer';
 import SummaryNavigation from './SummaryNavigation';
-import ItineraryLine from '../component/map/ItineraryLine';
-import LocationMarker from '../component/map/LocationMarker';
+import ItineraryLine from './map/ItineraryLine';
+import LocationMarker from './map/LocationMarker';
 import MobileItineraryWrapper from './MobileItineraryWrapper';
 import Loading from './Loading';
 import { getHomeUrl } from '../util/path';
@@ -28,11 +30,71 @@ import { defaultRoutingSettings } from '../util/planParamUtil';
 import { getIntermediatePlaces } from '../util/queryUtils';
 import { validateServiceTimeRange } from '../util/timeUtils';
 import withBreakpoint from '../util/withBreakpoint';
+import ComponentUsageExample from './ComponentUsageExample';
+import exampleData from './data/SummaryPage.ExampleData';
+import { isBrowser } from '../util/browser';
+import { itineraryHasCancelation } from '../util/alertUtils';
+import triggerMessage from '../util/messageUtils';
+import MessageStore from '../store/MessageStore';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 export const ITINERARYFILTERING_DEFAULT = 1.5;
 
-function getActiveIndex(state) {
-  return (state && state.summaryPageSelected) || 0;
+/**
+ * Returns the actively selected itinerary's index. Attempts to look for
+ * the information in the location's state and pathname, respectively.
+ * Otherwise, pre-selects the first non-cancelled itinerary or, failing that,
+ * defaults to the index 0.
+ *
+ * @param {{ pathname: string, state: * }} location the current location object.
+ * @param {*} itineraries the itineraries retrieved from OTP.
+ * @param {number} defaultValue the default value, defaults to 0.
+ */
+export const getActiveIndex = (
+  { pathname, state } = {},
+  itineraries = [],
+  defaultValue = 0,
+) => {
+  if (state) {
+    return state.summaryPageSelected || defaultValue;
+  }
+
+  /*
+   * If state does not exist, for example when accessing the summary
+   * page by an external link, we check if an itinerary selection is
+   * supplied in URL and make that the active selection.
+   */
+  const lastURLSegment = pathname && pathname.split('/').pop();
+  if (!Number.isNaN(Number(lastURLSegment))) {
+    return Number(lastURLSegment);
+  }
+
+  /**
+   * Pre-select the first not-cancelled itinerary, if available.
+   */
+  const itineraryIndex = findIndex(
+    itineraries,
+    itinerary => !itineraryHasCancelation(itinerary),
+  );
+  return itineraryIndex > 0 ? itineraryIndex : defaultValue;
+};
+
+/**
+ * Report any errors that happen when showing summary
+ *
+ * @param {Error|string|any} error
+ */
+export function reportError(error) {
+  if (!error) {
+    return;
+  }
+  addAnalyticsEvent({
+    category: 'Itinerary',
+    action: 'ErrorLoading',
+    name: 'SummaryPage',
+    message: error.message || error,
+    stack: error.stack || null,
+  });
 }
 
 class SummaryPage extends React.Component {
@@ -40,7 +102,10 @@ class SummaryPage extends React.Component {
     queryAggregator: PropTypes.shape({
       readyState: PropTypes.shape({
         done: PropTypes.bool.isRequired,
-        error: PropTypes.string,
+        error: PropTypes.oneOfType([
+          PropTypes.string,
+          PropTypes.instanceOf(Error),
+        ]),
       }).isRequired,
     }).isRequired,
     router: routerShape.isRequired,
@@ -48,10 +113,10 @@ class SummaryPage extends React.Component {
     config: PropTypes.object,
     executeAction: PropTypes.func.isRequired,
     headers: PropTypes.object.isRequired,
+    getStore: PropTypes.func,
   };
 
   static propTypes = {
-    printPage: PropTypes.object,
     location: PropTypes.shape({
       state: PropTypes.object,
     }).isRequired,
@@ -76,7 +141,7 @@ class SummaryPage extends React.Component {
     routes: PropTypes.arrayOf(
       PropTypes.shape({
         fullscreenMap: PropTypes.bool,
-        printPage: PropTypes.object,
+        printPage: PropTypes.bool,
       }).isRequired,
     ).isRequired,
     breakpoint: PropTypes.string.isRequired,
@@ -89,6 +154,11 @@ class SummaryPage extends React.Component {
   constructor(props, context) {
     super(props, context);
     context.executeAction(storeOrigin, props.from);
+    const error = get(context, 'queryAggregator.readyState.error', null);
+    if (error) {
+      reportError(error);
+    }
+    this.resultsUpdatedAlertRef = React.createRef();
   }
 
   state = { center: null, loading: false };
@@ -104,7 +174,12 @@ class SummaryPage extends React.Component {
       host.indexOf('127.0.0.1') === -1 &&
       host.indexOf('localhost') === -1
     ) {
+      // eslint-disable-next-line
       import('../util/feedbackly');
+    }
+    //  alert screen reader when search results appear
+    if (this.resultsUpdatedAlertRef.current) {
+      this.resultsUpdatedAlertRef.current.innerHTML = this.resultsUpdatedAlertRef.current.innerHTML;
     }
   }
 
@@ -118,11 +193,28 @@ class SummaryPage extends React.Component {
     }
   }
 
+  componentDidUpdate(prevProps) {
+    // alert screen readers when results update
+    if (
+      this.resultsUpdatedAlertRef.current &&
+      this.props.plan.plan.itineraries &&
+      JSON.stringify(prevProps.location) !== JSON.stringify(this.props.location)
+    ) {
+      // refresh content to trigger the alert
+      this.resultsUpdatedAlertRef.current.innerHTML = this.resultsUpdatedAlertRef.current.innerHTML;
+    }
+    const error = get(this.context, 'queryAggregator.readyState.error', null);
+    if (error) {
+      reportError(error);
+    }
+  }
+
   setLoading = loading => {
     this.setState({ loading });
   };
 
   setError = error => {
+    reportError(error);
     this.context.queryAggregator.readyState.error = error;
   };
 
@@ -133,15 +225,29 @@ class SummaryPage extends React.Component {
   renderMap() {
     const {
       plan: { plan },
-      location: { state, query },
+      location,
       from,
       to,
     } = this.props;
+    const { query } = location;
     const {
       config: { defaultEndpoint },
     } = this.context;
-    const activeIndex = getActiveIndex(state);
     const itineraries = (plan && plan.itineraries) || [];
+    const activeIndex = getActiveIndex(location, itineraries);
+    triggerMessage(
+      from.lat,
+      from.lon,
+      this.context,
+      this.context.getStore(MessageStore).getMessages(),
+    );
+
+    triggerMessage(
+      to.lat,
+      to.lon,
+      this.context,
+      this.context.getStore(MessageStore).getMessages(),
+    );
 
     const leafletObjs = sortBy(
       itineraries.map((itinerary, i) => (
@@ -159,24 +265,19 @@ class SummaryPage extends React.Component {
 
     if (from.lat && from.lon) {
       leafletObjs.push(
-        <LocationMarker key="fromMarker" position={from} className="from" />,
+        <LocationMarker key="fromMarker" position={from} type="from" />,
       );
     }
 
     if (to.lat && to.lon) {
       leafletObjs.push(
-        <LocationMarker key="toMarker" position={to} className="to" />,
+        <LocationMarker isLarge key="toMarker" position={to} type="to" />,
       );
     }
 
-    getIntermediatePlaces(query).forEach((location, i) => {
+    getIntermediatePlaces(query).forEach((intermediatePlace, i) => {
       leafletObjs.push(
-        <LocationMarker
-          key={`via_${i}`}
-          position={location}
-          className="via"
-          noText
-        />,
+        <LocationMarker key={`via_${i}`} position={intermediatePlace} />,
       );
     });
 
@@ -217,6 +318,7 @@ class SummaryPage extends React.Component {
 
   render() {
     const {
+      location,
       queryAggregator: {
         readyState: { done, error },
       },
@@ -263,29 +365,44 @@ class SummaryPage extends React.Component {
       latestArrivalTime = Math.max(...itineraries.map(i => i.endTime));
     }
 
+    const screenReaderUpdateAlert = (
+      <span className="sr-only" role="alert" ref={this.resultsUpdatedAlertRef}>
+        <FormattedMessage
+          id="itinerary-page.update-alert"
+          defaultMessage="Search results updated"
+        />
+      </span>
+    );
+
+    // added config.itinerary.serviceTimeRange parameter (DT-3175)
     const serviceTimeRange = validateServiceTimeRange(
+      this.context.config.itinerary.serviceTimeRange,
       this.props.serviceTimeRange,
     );
     if (this.props.breakpoint === 'large') {
       let content;
       if (this.state.loading === false && (done || error !== null)) {
         content = (
-          <SummaryPlanContainer
-            plan={this.props.plan.plan}
-            serviceTimeRange={serviceTimeRange}
-            itineraries={itineraries}
-            params={this.props.params}
-            error={error}
-            setLoading={this.setLoading}
-            setError={this.setError}
-          >
-            {this.props.content &&
-              React.cloneElement(this.props.content, {
-                itinerary:
-                  hasItineraries && itineraries[this.props.params.hash],
-                focus: this.updateCenter,
-              })}
-          </SummaryPlanContainer>
+          <>
+            {screenReaderUpdateAlert}
+            <SummaryPlanContainer
+              activeIndex={getActiveIndex(location, itineraries)}
+              plan={this.props.plan.plan}
+              serviceTimeRange={serviceTimeRange}
+              itineraries={itineraries}
+              params={this.props.params}
+              error={error}
+              setLoading={this.setLoading}
+              setError={this.setError}
+            >
+              {this.props.content &&
+                React.cloneElement(this.props.content, {
+                  itinerary:
+                    hasItineraries && itineraries[this.props.params.hash],
+                  focus: this.updateCenter,
+                })}
+            </SummaryPlanContainer>
+          </>
         );
       } else {
         content = (
@@ -345,15 +462,19 @@ class SummaryPage extends React.Component {
       );
     } else {
       content = (
-        <SummaryPlanContainer
-          plan={this.props.plan.plan}
-          serviceTimeRange={serviceTimeRange}
-          itineraries={itineraries}
-          params={this.props.params}
-          error={error}
-          setLoading={this.setLoading}
-          setError={this.setError}
-        />
+        <>
+          <SummaryPlanContainer
+            activeIndex={getActiveIndex(location, itineraries)}
+            plan={this.props.plan.plan}
+            serviceTimeRange={serviceTimeRange}
+            itineraries={itineraries}
+            params={this.props.params}
+            error={error}
+            setLoading={this.setLoading}
+            setError={this.setError}
+          />
+          {screenReaderUpdateAlert}
+        </>
       );
     }
 
@@ -379,7 +500,15 @@ class SummaryPage extends React.Component {
   }
 }
 
-export default Relay.createContainer(withBreakpoint(SummaryPage), {
+const SummaryPageWithBreakpoint = withBreakpoint(SummaryPage);
+
+SummaryPageWithBreakpoint.description = (
+  <ComponentUsageExample isFullscreen>
+    {isBrowser && <SummaryPageWithBreakpoint {...exampleData} />}
+  </ComponentUsageExample>
+);
+
+const containerComponent = Relay.createContainer(SummaryPageWithBreakpoint, {
   fragments: {
     plan: () => Relay.QL`
       fragment on QueryType {
@@ -419,7 +548,10 @@ export default Relay.createContainer(withBreakpoint(SummaryPage), {
           itineraryFiltering: $itineraryFiltering,
           modeWeight: $modeWeight
           preferred: $preferred,
-          unpreferred: $unpreferred),
+          unpreferred: $unpreferred,
+          allowedBikeRentalNetworks: $allowedBikeRentalNetworks,
+          locale: $locale,
+        ),
         {
           ${SummaryPlanContainer.getFragment('plan')}
           ${ItineraryTab.getFragment('searchTime')}
@@ -475,7 +607,14 @@ export default Relay.createContainer(withBreakpoint(SummaryPage), {
       walkReluctance: null,
       walkSpeed: null,
       wheelchair: null,
+      allowedBikeRentalNetworks: null,
+      locale: cookie.load('lang') || 'fi',
     },
     ...defaultRoutingSettings,
   },
 });
+
+export {
+  containerComponent as default,
+  SummaryPageWithBreakpoint as Component,
+};

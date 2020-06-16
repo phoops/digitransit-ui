@@ -38,6 +38,7 @@ import meta from './meta';
 
 // configuration
 import { getConfiguration } from './config';
+import { getAnalyticsInitCode } from './util/analyticsUtils';
 
 // Look up paths for various asset files
 const appRoot = `${process.cwd()}/`;
@@ -250,9 +251,11 @@ export default function(req, res, next) {
         301,
         redirectLocation.pathname + redirectLocation.search,
       );
-    } else if (error) {
+    }
+    if (error) {
       return next(error);
-    } else if (!renderProps) {
+    }
+    if (!renderProps) {
       return res.status(404).send('Not found');
     }
 
@@ -281,6 +284,8 @@ export default function(req, res, next) {
 
     // Write preload hints before doing anything else
     if (process.env.NODE_ENV !== 'development') {
+      res.write(getAnalyticsInitCode(config.GTMid));
+
       const preloads = [
         { as: 'style', href: config.URL.FONT },
         {
@@ -364,7 +369,10 @@ export default function(req, res, next) {
         return [content, relayData];
       })
       .catch(err => {
+        // eslint-disable-next-line no-console
         console.log(err);
+        // the first element in the array is not an error message but it conveys the absence of information.
+        // it is required to continue the server-side rendering correctly.
         return ['', undefined];
       });
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 import React from 'react';
 import get from 'lodash/get';
@@ -8,21 +9,23 @@ const getText = (route, config) => {
   const showAgency = get(config, 'agency.show', false);
   if (route.shortName) {
     return route.shortName;
-  } else if (showAgency && route.agency) {
+  }
+  if (showAgency && route.agency) {
     return route.agency.name;
   }
   return '';
 };
 
 const RouteNumberContainer = (
-  { className, route, isCallAgency, ...props },
+  { alertSeverityLevel, className, route, isCallAgency, ...props },
   { config },
 ) =>
   route && (
     <RouteNumber
+      alertSeverityLevel={alertSeverityLevel}
       className={className}
       isCallAgency={isCallAgency || route.type === 715}
-      hasDisruption={props.hasDisruption}
+      color={route.color ? `#${route.color}` : null}
       mode={route.mode}
       text={getText(route, config)}
       {...props}
@@ -30,14 +33,15 @@ const RouteNumberContainer = (
   );
 
 RouteNumberContainer.propTypes = {
+  alertSeverityLevel: PropTypes.string,
   route: PropTypes.object.isRequired,
   vertical: PropTypes.bool,
   className: PropTypes.string,
-  hasDisruption: PropTypes.bool,
   fadeLong: PropTypes.bool,
 };
 
 RouteNumberContainer.defaultProps = {
+  alertSeverityLevel: undefined,
   className: '',
 };
 

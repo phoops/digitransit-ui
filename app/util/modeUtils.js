@@ -11,6 +11,7 @@ import inside from 'point-in-polygon';
 import { replaceQueryParams } from './queryUtils';
 import { getCustomizedSettings } from '../store/localStorage';
 import { isInBoundingBox } from './geo-utils';
+import { addAnalyticsEvent } from './analyticsUtils';
 
 /**
  * Retrieves an array of street mode configurations that have specified
@@ -132,7 +133,7 @@ const isModeAvailable = (config, mode) =>
  * @param {String} mode The mode to check
  * @param {*} places
  */
-const isModeAvailableInsidePolygons = (config, mode, places) => {
+export const isModeAvailableInsidePolygons = (config, mode, places) => {
   if (mode in config.modePolygons && places.length > 0) {
     for (let i = 0; i < places.length; i++) {
       const { lat, lon } = places[i];
@@ -287,7 +288,8 @@ export const isBikeRestricted = (location, config, modes) => {
       modes.some(o => config.modesWithNoBike.includes(o))
     ) {
       return true;
-    } else if (config.modesWithNoBike.includes(modes)) {
+    }
+    if (config.modesWithNoBike.includes(modes)) {
       return true;
     }
   }
@@ -303,6 +305,17 @@ export const isBikeRestricted = (location, config, modes) => {
  */
 export const toggleTransportMode = (transportMode, config, router) => {
   const currentLocation = router.getCurrentLocation();
+  let actionName;
+  if (getModes(currentLocation, config).includes(transportMode.toUpperCase())) {
+    actionName = 'SettingsDisableTransportMode';
+  } else {
+    actionName = 'SettingsEnableTransportMode';
+  }
+  addAnalyticsEvent({
+    action: actionName,
+    category: 'ItinerarySettings',
+    name: transportMode,
+  });
   if (isBikeRestricted(router.location, config, transportMode)) {
     return;
   }
@@ -310,4 +323,28 @@ export const toggleTransportMode = (transportMode, config, router) => {
     transportMode.toUpperCase(),
   ]).join(',');
   replaceQueryParams(router, { modes });
+};
+
+/**
+ * Updates the browser's url to enable citybikes WITH all networks
+ *
+ * @param {*} transportMode The transport mode to select
+ * @param {*} config The configuration for the software installation
+ * @param {*} router The router
+ * @param {*} networks The citybike networks to be allowed
+ */
+export const toggleCitybikesAndNetworks = (
+  transportMode,
+  config,
+  router,
+  networks,
+) => {
+  const currentLocation = router.getCurrentLocation();
+  if (isBikeRestricted(router.location, config, transportMode)) {
+    return;
+  }
+  const modes = xor(getModes(currentLocation, config), [
+    transportMode.toUpperCase(),
+  ]).join(',');
+  replaceQueryParams(router, { modes, allowedBikeRentalNetworks: networks });
 };

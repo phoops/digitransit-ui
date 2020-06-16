@@ -6,6 +6,7 @@ import Relay from 'react-relay/classic';
 import { routerShape } from 'react-router';
 import getContext from 'recompose/getContext';
 
+import { FormattedMessage } from 'react-intl';
 import ItinerarySummaryListContainer from './ItinerarySummaryListContainer';
 import TimeNavigationButtons from './TimeNavigationButtons';
 import TimeStore from '../store/TimeStore';
@@ -18,9 +19,11 @@ import {
 } from '../util/planParamUtil';
 import { getIntermediatePlaces, replaceQueryParams } from '../util/queryUtils';
 import withBreakpoint from '../util/withBreakpoint';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 class SummaryPlanContainer extends React.Component {
   static propTypes = {
+    activeIndex: PropTypes.number,
     breakpoint: PropTypes.string.isRequired,
     children: PropTypes.node,
     config: PropTypes.object.isRequired,
@@ -51,6 +54,7 @@ class SummaryPlanContainer extends React.Component {
   };
 
   static defaultProps = {
+    activeIndex: 0,
     error: undefined,
     itineraries: [],
   };
@@ -58,11 +62,10 @@ class SummaryPlanContainer extends React.Component {
   static contextTypes = {
     router: routerShape.isRequired,
     location: PropTypes.object.isRequired,
-    piwik: PropTypes.object,
   };
 
   onSelectActive = index => {
-    if (this.getActiveIndex() === index) {
+    if (this.props.activeIndex === index) {
       this.onSelectImmediately(index);
     } else {
       this.context.router.replace({
@@ -70,20 +73,23 @@ class SummaryPlanContainer extends React.Component {
         state: { summaryPageSelected: index },
         pathname: getRoutePath(this.props.params.from, this.props.params.to),
       });
+      addAnalyticsEvent({
+        category: 'Itinerary',
+        action: 'HighlightItinerary',
+        name: index,
+      });
     }
   };
 
   onSelectImmediately = index => {
     if (Number(this.props.params.hash) === index) {
       if (this.props.breakpoint === 'large') {
-        if (this.context.piwik != null) {
-          this.context.piwik.trackEvent(
-            'ItinerarySettings',
-            'ItineraryDetailsClick',
-            'ItineraryDetailsCollapse',
-            index,
-          );
-        }
+        addAnalyticsEvent({
+          event: 'sendMatomoEvent',
+          category: 'ItinerarySettings',
+          action: 'ItineraryDetailsClick',
+          name: 'ItineraryDetailsCollapse',
+        });
         this.context.router.replace({
           ...this.context.location,
           pathname: getRoutePath(this.props.params.from, this.props.params.to),
@@ -92,14 +98,12 @@ class SummaryPlanContainer extends React.Component {
         this.context.router.goBack();
       }
     } else {
-      if (this.context.piwik != null) {
-        this.context.piwik.trackEvent(
-          'ItinerarySettings',
-          'ItineraryDetailsClick',
-          'ItineraryDetailsExpand',
-          index,
-        );
-      }
+      addAnalyticsEvent({
+        event: 'sendMatomoEvent',
+        category: 'Itinerary',
+        action: 'OpenItineraryDetails',
+        name: index,
+      });
       const newState = {
         ...this.context.location,
         state: { summaryPageSelected: index },
@@ -126,13 +130,12 @@ class SummaryPlanContainer extends React.Component {
   };
 
   onLater = () => {
-    if (this.context.piwik != null) {
-      this.context.piwik.trackEvent(
-        'ItinerarySettings',
-        'ShowMoreRoutesClick',
-        'ShowMoreRoutesLater',
-      );
-    }
+    addAnalyticsEvent({
+      event: 'sendMatomoEvent',
+      category: 'Itinerary',
+      action: 'ShowLaterItineraries',
+      name: null,
+    });
 
     const end = moment.unix(this.props.serviceTimeRange.end);
     const latestDepartureTime = this.props.itineraries.reduce(
@@ -141,7 +144,8 @@ class SummaryPlanContainer extends React.Component {
 
         if (previous == null) {
           return startTime;
-        } else if (startTime.isAfter(previous)) {
+        }
+        if (startTime.isAfter(previous)) {
           return startTime;
         }
         return previous;
@@ -209,13 +213,12 @@ class SummaryPlanContainer extends React.Component {
   };
 
   onEarlier = () => {
-    if (this.context.piwik != null) {
-      this.context.piwik.trackEvent(
-        'ItinerarySettings',
-        'ShowMoreRoutesClick',
-        'ShowMoreRoutesEarlier',
-      );
-    }
+    addAnalyticsEvent({
+      event: 'sendMatomoEvent',
+      category: 'Itinerary',
+      action: 'ShowEarlierItineraries',
+      name: null,
+    });
 
     const start = moment.unix(this.props.serviceTimeRange.start);
     const earliestArrivalTime = this.props.itineraries.reduce(
@@ -223,7 +226,8 @@ class SummaryPlanContainer extends React.Component {
         const endTime = moment(current.endTime);
         if (previous == null) {
           return endTime;
-        } else if (endTime.isBefore(previous)) {
+        }
+        if (endTime.isBefore(previous)) {
           return endTime;
         }
         return previous;
@@ -304,13 +308,12 @@ class SummaryPlanContainer extends React.Component {
   };
 
   onNow = () => {
-    if (this.context.piwik != null) {
-      this.context.piwik.trackEvent(
-        'ItinerarySettings',
-        'ShowMoreRoutesClick',
-        'ShowMoreRoutesNow',
-      );
-    }
+    addAnalyticsEvent({
+      event: 'sendMatomoEvent',
+      category: 'Itinerary',
+      action: 'ResetJourneyStartTime',
+      name: null,
+    });
 
     replaceQueryParams(this.context.router, {
       time: moment().unix(),
@@ -355,6 +358,8 @@ class SummaryPlanContainer extends React.Component {
       $compactLegsByReversedSearch: Boolean!,
       $itineraryFiltering: Float!,
       $modeWeight: InputModeWeight!,
+      $allowedBikeRentalNetworks: [String]!,
+      $locale: String!,
     ) { viewer {
         plan(
           fromPlace:$fromPlace,
@@ -392,28 +397,16 @@ class SummaryPlanContainer extends React.Component {
           compactLegsByReversedSearch:$compactLegsByReversedSearch,
           itineraryFiltering: $itineraryFiltering,
           modeWeight: $modeWeight,
+          allowedBikeRentalNetworks: $allowedBikeRentalNetworks,
+          locale: $locale,
         ) {itineraries {startTime,endTime}}
       }
     }`;
 
-  getActiveIndex() {
-    if (this.context.location.state) {
-      return this.context.location.state.summaryPageSelected || 0;
-    }
-    /*
-     * If state does not exist, for example when accessing the summary
-     * page by an external link, we check if an itinerary selection is
-     * supplied in URL and make that the active selection.
-     */
-    const lastURLSegment = this.context.location.pathname.split('/').pop();
-    return Number.isNaN(Number(lastURLSegment)) ? 0 : Number(lastURLSegment);
-  }
-
   render() {
-    const activeIndex = this.getActiveIndex();
     const { location } = this.context;
     const { from, to } = this.props.params;
-    const { currentTime, locationState, itineraries } = this.props;
+    const { activeIndex, currentTime, locationState, itineraries } = this.props;
     const searchTime =
       this.props.plan.date ||
       (location.query &&
@@ -424,6 +417,12 @@ class SummaryPlanContainer extends React.Component {
 
     return (
       <div className="summary">
+        <h2 className="sr-only">
+          <FormattedMessage
+            id="itinerary-summary-page.description"
+            defaultMessage="Route suggestions"
+          />
+        </h2>
         <ItinerarySummaryListContainer
           activeIndex={activeIndex}
           currentTime={currentTime}

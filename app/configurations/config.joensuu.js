@@ -1,10 +1,11 @@
+/* eslint-disable prefer-template */
 import configMerger from '../util/configMerger';
 
 const CONFIG = 'joensuu';
 const APP_TITLE = 'Joensuun reittiopas';
 const APP_DESCRIPTION = 'Joensuun uusi reittiopas';
 
-const walttiConfig = require('./waltti').default;
+const walttiConfig = require('./config.waltti').default;
 
 export default configMerger(walttiConfig, {
   CONFIG,
@@ -32,6 +33,15 @@ export default configMerger(walttiConfig, {
   socialMedia: {
     title: APP_TITLE,
     description: APP_DESCRIPTION,
+  },
+
+  mapLayers: {
+    tooltip: {
+      fi: 'Uutta! Saat nyt lähellä olevat bussit kartalle asetuksista.',
+      en: 'New! You can now get nearby busses on the map from the settings.',
+      sv:
+        'Nytt! I inställningarna kan du nu välja att se närliggande bussar på kartan.',
+    },
   },
 
   transportModes: {
@@ -87,6 +97,9 @@ export default configMerger(walttiConfig, {
     },
   ],
 
+  showAllBusses: true,
+  showVehiclesOnStopPage: true,
+
   aboutThisService: {
     fi: [
       {
@@ -114,5 +127,15 @@ export default configMerger(walttiConfig, {
         ],
       },
     ],
+  },
+  zoneIdMapping: {
+    1: 'A',
+    2: 'B',
+    3: 'C',
+  },
+  stopCard: {
+    header: {
+      showZone: true,
+    },
   },
 });

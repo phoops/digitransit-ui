@@ -5,9 +5,11 @@ import cx from 'classnames';
 
 import ComponentUsageExample from './ComponentUsageExample';
 import WalkDistance from './WalkDistance';
+import ServiceAlertIcon from './ServiceAlertIcon';
 import StopCode from './StopCode';
 import PatternLink from './PatternLink';
 import { fromStopTime } from './DepartureTime';
+import { RealtimeStateType, AlertSeverityLevelType } from '../constants';
 import { PREFIX_STOPS } from '../util/path';
 import {
   currentTime as exampleCurrentTime,
@@ -15,8 +17,20 @@ import {
   realtimeDeparture as exampleRealtimeDeparture,
   vehicle as exampleVehicle,
 } from './ExampleData';
+import { getActiveAlertSeverityLevel } from '../util/alertUtils';
 
 const TripRouteStop = props => {
+  const {
+    className,
+    color,
+    currentTime,
+    distance,
+    mode,
+    stop,
+    stopPassed,
+    stoptime,
+  } = props;
+
   const vehicles =
     props.vehicles &&
     props.vehicles.map(vehicle => (
@@ -35,12 +49,12 @@ const TripRouteStop = props => {
     <div
       className={cx(
         'route-stop location-details_container',
-        { passed: props.stopPassed },
-        props.className,
+        { passed: stopPassed },
+        className,
       )}
     >
       <div className=" route-stop-now">{vehicles}</div>
-      <div className={cx('route-stop-now_circleline', props.mode)}>
+      <div className={cx('route-stop-now_circleline', mode)}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width={15}
@@ -48,36 +62,44 @@ const TripRouteStop = props => {
         >
           <circle
             strokeWidth="2"
-            stroke="currentColor"
+            stroke={'currentColor'}
             fill="white"
             cx="6"
             cy="13"
             r="5"
           />
         </svg>
-        <div className={cx('route-stop-now_line', props.mode)} />
+        <div className={cx('route-stop-now_line', mode)} />
       </div>
       <div className="route-stop-row_content-container">
-        <Link to={`/${PREFIX_STOPS}/${encodeURIComponent(props.stop.gtfsId)}`}>
-          <div className={`route-details_container ${props.mode}`}>
-            <span>{props.stop.name}</span>
+        <Link to={`/${PREFIX_STOPS}/${encodeURIComponent(stop.gtfsId)}`}>
+          <div className={`route-details_container ${mode}`}>
             <div>
-              {props.stop.code && <StopCode code={props.stop.code} />}
-              <span className="route-stop-address">{props.stop.desc}</span>
+              <span>{stop.name}</span>
+              <ServiceAlertIcon
+                className="inline-icon"
+                severityLevel={getActiveAlertSeverityLevel(
+                  stop.alerts,
+                  currentTime,
+                )}
+              />
+            </div>
+            <div>
+              {stop.code && <StopCode code={stop.code} />}
+              <span className="route-stop-address">{stop.desc}</span>
               {'\u2002'}
-              {props.distance && (
+              {distance && (
                 <WalkDistance
                   className="nearest-route-stop"
                   icon="icon_location-with-user"
-                  walkDistance={props.distance}
+                  walkDistance={distance}
                 />
               )}
             </div>
           </div>
           <div className="departure-times-container">
-            <div className=" route-stop-time">
-              {props.stoptime &&
-                fromStopTime(props.stoptime, props.currentTime)}
+            <div className="route-stop-time">
+              {stoptime && fromStopTime(stoptime, currentTime)}
             </div>
           </div>
         </Link>
@@ -143,6 +165,68 @@ TripRouteStop.description = () => (
         stoptime={exampleRealtimeDeparture}
         currentTime={exampleCurrentTime}
         selectedVehicle={exampleVehicle}
+      />
+    </ComponentUsageExample>
+    <ComponentUsageExample description="With info:">
+      <TripRouteStop
+        key={exampleDeparture.stop.gtfsId}
+        stop={{
+          ...exampleDeparture.stop,
+          alerts: [
+            {
+              alertSeverityLevel: AlertSeverityLevelType.Info,
+            },
+          ],
+        }}
+        mode={exampleDeparture.pattern.route.mode}
+        route={exampleDeparture.pattern.route.gtfsId}
+        pattern={exampleDeparture.pattern.code}
+        vehicles={null}
+        realtime={false}
+        distance={321}
+        stoptime={exampleDeparture}
+        currentTime={exampleCurrentTime}
+        selectedVehicle={false}
+      />
+    </ComponentUsageExample>
+    <ComponentUsageExample description="With caution:">
+      <TripRouteStop
+        key={exampleDeparture.stop.gtfsId}
+        stop={{
+          ...exampleDeparture.stop,
+          alerts: [
+            {
+              alertSeverityLevel: AlertSeverityLevelType.Warning,
+            },
+          ],
+        }}
+        mode={exampleDeparture.pattern.route.mode}
+        route={exampleDeparture.pattern.route.gtfsId}
+        pattern={exampleDeparture.pattern.code}
+        vehicles={null}
+        realtime={false}
+        distance={321}
+        currentTime={exampleCurrentTime}
+        selectedVehicle={false}
+      />
+    </ComponentUsageExample>
+    <ComponentUsageExample description="With cancelation:">
+      <TripRouteStop
+        key={exampleDeparture.stop.gtfsId}
+        stop={exampleDeparture.stop}
+        mode={exampleDeparture.pattern.route.mode}
+        route={exampleDeparture.pattern.route.gtfsId}
+        pattern={exampleDeparture.pattern.code}
+        vehicles={null}
+        realtime={false}
+        distance={321}
+        stoptime={{
+          ...exampleDeparture,
+          realtimeState: RealtimeStateType.Canceled,
+          scheduledDeparture: 69900,
+        }}
+        currentTime={exampleCurrentTime}
+        selectedVehicle={false}
       />
     </ComponentUsageExample>
   </div>

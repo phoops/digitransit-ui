@@ -11,6 +11,7 @@ import {
   getOldSearchesStorage,
   setOldSearchesStorage,
 } from '../../app/store/localStorage';
+import { PREFIX_ROUTES, PREFIX_STOPS } from '../../app/util/path';
 
 const mockData = {
   old: {
@@ -79,12 +80,31 @@ const mockData = {
     },
     type: 'endpoint',
   },
+  currentLocation: {
+    item: {
+      type: 'CurrentLocation',
+      address: 'Mannerheimintie 1, Helsinki',
+      lat: 60.17020147545328,
+      lon: 24.937821437201357,
+      properties: {
+        labelId: 'Käytä nykyistä sijaintia',
+        layer: 'currentPosition',
+        address: 'Mannerheimintie 1, Helsinki',
+        lat: 60.17020147545328,
+        lon: 24.937821437201357,
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: [24.937821437201357, 60.17020147545328],
+      },
+    },
+    type: 'endpoint',
+  },
 };
 
 describe('OldSearchesStore', () => {
   afterEach(() => {
     MockDate.reset();
-    global.localStorage.clear();
   });
 
   describe('getStorageObject()', () => {
@@ -220,6 +240,25 @@ describe('OldSearchesStore', () => {
       expect(oldSearches).to.not.be.empty;
       expect(oldSearches.length).to.equal(1);
     });
+
+    it('should ignore items of type "CurrentLocation" if they are found from the store', () => {
+      const timeStamp = moment('2019-06-19');
+      MockDate.set(timeStamp);
+      setOldSearchesStorage({
+        version: STORE_VERSION,
+        items: [
+          {
+            ...mockData.currentLocation,
+            count: 1,
+            lastUpdated: timeStamp.unix(),
+          },
+        ],
+      });
+
+      const store = new OldSearchesStore();
+      const searches = store.getOldSearches();
+      expect(searches).to.have.lengthOf(0);
+    });
   });
 
   describe('saveSearch(destination)', () => {
@@ -267,7 +306,7 @@ describe('OldSearchesStore', () => {
               },
             ],
             layer: 'route-BUS',
-            link: '/linjat/foobar/pysakit/foobar:0:01',
+            link: `/${PREFIX_ROUTES}/foobar/${PREFIX_STOPS}/foobar:0:01`,
           },
           geometry: {
             coordinates: null,
@@ -295,7 +334,7 @@ describe('OldSearchesStore', () => {
               },
             ],
             layer: 'route-BUS',
-            link: '/linjat/tampere:32/pysakit/tampere:32:0:01',
+            link: `/${PREFIX_ROUTES}/tampere:32/${PREFIX_STOPS}/tampere:32:0:01`,
           },
           geometry: {
             coordinates: null,
@@ -309,6 +348,12 @@ describe('OldSearchesStore', () => {
 
       const result = store.getOldSearches()[0];
       expect(result).to.deep.equal(newData.item);
+    });
+
+    it('should not save items of type "CurrentLocation"', () => {
+      const store = new OldSearchesStore();
+      store.saveSearch({ ...mockData.currentLocation });
+      expect(getOldSearchesStorage().items).to.deep.equal([]);
     });
   });
 });

@@ -5,11 +5,13 @@ import sinon from 'sinon';
 
 import createRouter, { getCreateHistoryFunction } from '../../app/history';
 import createLocalStorageHistory from '../../app/localStorageHistory';
+import { PREFIX_ITINERARY_SUMMARY } from '../../app/util/path';
 
 describe('history', () => {
   describe('getCreateHistoryFunction', () => {
-    it('should use createMemoryHistory by default', () => {
-      const result = getCreateHistoryFunction();
+    it('should use createMemoryHistory by default in a non-browser environment', () => {
+      const path = '/';
+      const result = getCreateHistoryFunction(path, false);
       expect(result).to.equal(createMemoryHistory);
     });
 
@@ -34,19 +36,28 @@ describe('history', () => {
     });
 
     it('should use createHistory if in iOSApp and path is not root', () => {
-      const path = '/reitti/foo/bar';
+      const path = `/${PREFIX_ITINERARY_SUMMARY}/foo/bar`;
       const result = getCreateHistoryFunction(path, true, true);
       expect(result).to.equal(createHistory);
     });
   });
 
   describe('default export', () => {
-    it('should apply the given path if not using createHistory', () => {
+    it('should not apply the given path if in browser', () => {
       const config = {
         APP_PATH: 'foobar',
       };
       const path = '/foo/bar';
-      const router = createRouter(config, path);
+      const router = createRouter(config, path, true);
+      expect(router.getCurrentLocation().pathname).to.equal('/');
+    });
+
+    it('should apply the given path if not in browser', () => {
+      const config = {
+        APP_PATH: 'foobar',
+      };
+      const path = '/foo/bar';
+      const router = createRouter(config, path, false);
       expect(router.getCurrentLocation().pathname).to.equal(path);
     });
   });

@@ -1,12 +1,43 @@
 import Store from 'fluxible/addons/BaseStore';
-import { isBrowser } from '../util/browser';
+import { getIsBrowser, isIeOrOldVersion } from '../util/browser';
 import { setReadMessageIds, getReadMessageIds } from './localStorage';
+import { setSessionMessageIds, getSessionMessageIds } from './sessionStorage';
+
+export const processStaticMessages = (root, callback) => {
+  const { staticMessages, staticIEMessage } = root;
+  if (Array.isArray(staticIEMessage) && isIeOrOldVersion()) {
+    staticIEMessage
+      .filter(
+        msg =>
+          msg.content &&
+          Object.keys(msg.content).some(
+            key =>
+              Array.isArray(msg.content[key]) && msg.content[key].length > 0,
+          ),
+      )
+      .forEach(callback);
+  }
+
+  if (Array.isArray(staticMessages)) {
+    staticMessages
+      .filter(
+        msg =>
+          msg.content &&
+          Object.keys(msg.content).some(
+            key =>
+              Array.isArray(msg.content[key]) && msg.content[key].length > 0,
+          ),
+      )
+      .forEach(callback);
+  }
+};
 
 class MessageStore extends Store {
   static storeName = 'MessageStore';
 
   static handlers = {
     AddMessage: 'addMessage',
+    UpdateMessage: 'updateMessage',
     MarkMessageAsRead: 'markMessageAsRead',
   };
 
@@ -34,6 +65,7 @@ class MessageStore extends Store {
 
   addMessage = msg => {
     const readIds = getReadMessageIds();
+    const sessionReadIds = getSessionMessageIds();
     const message = { ...msg };
 
     if (!message.id) {
@@ -44,32 +76,39 @@ class MessageStore extends Store {
       return;
     }
 
-    if (msg.persistence !== 'repeat' && readIds.indexOf(msg.id) !== -1) {
+    if (
+      (msg.persistence !== 'repeat' && readIds.indexOf(msg.id) !== -1) ||
+      sessionReadIds.indexOf(msg.id) !== -1
+    ) {
       return;
+    }
+
+    // If message has geojson, it should be triggered when user's origin or destination is in the correct area
+    if (message.geoJson) {
+      message.shouldTrigger = false;
+    } else {
+      message.shouldTrigger = true;
     }
 
     this.messages.set(message.id, message);
     this.emitChange();
   };
 
-  addConfigMessages = config => {
-    const processStaticMessages = root => {
-      if (root.staticMessages) {
-        root.staticMessages.forEach(this.addMessage);
-      }
-    };
+  updateMessage = msg => {
+    this.messages.set(msg.id, msg);
+    this.emitChange();
+  };
 
-    processStaticMessages(config);
+  addConfigMessages = async config => {
+    processStaticMessages(config, this.addMessage);
 
-    if (isBrowser && config.staticMessagesUrl !== undefined) {
-      fetch(config.staticMessagesUrl, {
+    if (getIsBrowser() && config.staticMessagesUrl !== undefined) {
+      const response = await fetch(config.staticMessagesUrl, {
         mode: 'cors',
         cache: 'reload',
-      }).then(response =>
-        response.json().then(json => {
-          processStaticMessages(json);
-        }),
-      );
+      });
+      const json = await response.json();
+      processStaticMessages(json, this.addMessage);
     }
   };
 
@@ -83,11 +122,17 @@ class MessageStore extends Store {
     }
 
     let changed;
+    let sessionChanged;
     const readIds = getReadMessageIds();
+    const sessionReadIds = getSessionMessageIds();
     ids.forEach(id => {
-      if (readIds.indexOf(id) === -1) {
+      // Add staticIEMessage's id to sessionStorage (id 3)
+      if (readIds.indexOf(id) === -1 && id !== '3') {
         readIds.push(id);
         changed = true;
+      } else if (sessionReadIds.indexOf(id) === -1 && id === '3') {
+        sessionReadIds.push(id);
+        sessionChanged = true;
       }
       if (this.messages.has(id)) {
         this.messages.delete(id);
@@ -96,6 +141,10 @@ class MessageStore extends Store {
     });
     if (changed) {
       setReadMessageIds(readIds);
+      this.emitChange();
+    }
+    if (sessionChanged) {
+      setSessionMessageIds(sessionReadIds);
       this.emitChange();
     }
   };

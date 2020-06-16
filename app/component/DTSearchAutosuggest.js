@@ -21,6 +21,7 @@ class DTAutosuggest extends React.Component {
     autoFocus: PropTypes.bool,
     className: PropTypes.string,
     executeSearch: PropTypes.func,
+    icon: PropTypes.string,
     id: PropTypes.string.isRequired,
     isFocused: PropTypes.func,
     layers: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -29,12 +30,14 @@ class DTAutosuggest extends React.Component {
     searchType: PropTypes.oneOf(['all', 'endpoint', 'search']).isRequired,
     selectedFunction: PropTypes.func.isRequired,
     value: PropTypes.string,
+    ariaLabel: PropTypes.string,
   };
 
   static defaultProps = {
     autoFocus: false,
     className: '',
     executeSearch,
+    icon: undefined,
     isFocused: () => {},
     value: '',
   };
@@ -84,7 +87,7 @@ class DTAutosuggest extends React.Component {
     this.props.isFocused(false);
     this.setState({
       editing: false,
-      value: this.props.value,
+      value: this.props.value, // DT-3263: changed this.state.value from this.props.value
     });
   };
 
@@ -103,14 +106,15 @@ class DTAutosuggest extends React.Component {
       );
     } else {
       this.setState(
-        {
-          pendingSelection: this.state.value,
-        },
+        prevState => ({
+          pendingSelection: prevState.value,
+        }),
         () => this.checkPendingSelection(), // search may finish during state change
       );
     }
   };
 
+  // DT-3263: not clear automatically suggestions: [] (e.g. user comes back with tabulator)
   onSuggestionsClearRequested = () => {
     this.setState({
       suggestions: [],
@@ -145,7 +149,13 @@ class DTAutosuggest extends React.Component {
   clearButton = () => {
     const img = this.state.value ? 'icon-icon_close' : 'icon-icon_search';
     return (
-      <button className="noborder clear-input" onClick={this.clearInput}>
+      <button
+        className="noborder clear-input"
+        onClick={this.clearInput}
+        aria-label={this.context.intl.formatMessage({
+          id: this.state.value ? 'clear-button-label' : 'search-button-label',
+        })}
+      >
         <Icon img={img} />
       </button>
     );
@@ -202,12 +212,11 @@ class DTAutosuggest extends React.Component {
     };
     // must update suggestions
     this.setState(newState, () => this.fetchFunction({ value: '' }));
-
     this.props.isFocused(true);
     this.input.focus();
   };
 
-  inputClicked = () => {
+  inputClicked = inputValue => {
     if (!this.state.editing) {
       this.props.isFocused(true);
       const newState = {
@@ -215,11 +224,24 @@ class DTAutosuggest extends React.Component {
         // reset at start, just in case we missed something
         pendingSelection: null,
       };
+      // DT-3263: added stateKeyDown
+      const stateKeyDown = {
+        editing: true,
+        pendingSelection: null,
+        value: inputValue,
+      };
 
       if (!this.state.suggestions.length) {
-        this.setState(newState, () =>
-          this.fetchFunction({ value: this.state.value }),
-        );
+        // DT-3263: added if-else statement
+        if (typeof inputValue === 'object' || !inputValue) {
+          this.setState(newState, () =>
+            this.fetchFunction({ value: this.state.value }),
+          );
+        } else {
+          this.setState(stateKeyDown, () =>
+            this.fetchFunction({ value: inputValue }),
+          );
+        }
       } else {
         this.setState(newState);
       }
@@ -237,12 +259,38 @@ class DTAutosuggest extends React.Component {
       doNotShowLinkToStop={this.state.doNotShowLinkToStop}
       ref={item.name}
       item={item}
+      intl={this.context.intl}
       loading={!this.state.valid}
       useTransportIconsconfig={
         this.context.config.search.suggestions.useTransportIcons
       }
     />
   );
+
+  // DT-3263 starts
+  // eslint-disable-next-line consistent-return
+  keyDown = event => {
+    const keyCode = event.keyCode || event.which;
+    if (this.state.editing) {
+      return this.inputClicked();
+    }
+
+    if ((keyCode === 13 || keyCode === 40) && this.state.value === '') {
+      return this.clearInput();
+    }
+
+    if (keyCode === 40 && this.state.value !== '') {
+      const newState = {
+        editing: true,
+        value: this.state.value,
+      };
+      // must update suggestions
+      this.setState(newState, () =>
+        this.fetchFunction({ value: this.state.value }),
+      );
+    }
+  };
+  // DT-3263 ends
 
   render() {
     const { value, suggestions } = this.state;
@@ -255,13 +303,34 @@ class DTAutosuggest extends React.Component {
       onChange: this.onChange,
       onBlur: this.onBlur,
       className: `react-autosuggest__input ${this.props.className}`,
+      onKeyDown: this.keyDown, // DT-3263
     };
-
+    const ariaBarId = this.props.id.replace('searchfield-', '');
+    let SearchBarId =
+      this.props.ariaLabel ||
+      this.context.intl.formatMessage({
+        id: ariaBarId,
+        defaultMessage: ariaBarId,
+      });
+    SearchBarId = SearchBarId.replace('searchfield-', '');
+    const ariaLabelText = this.context.intl.formatMessage({
+      id: 'search-autosuggest-label',
+      defaultMessage: 'Search for places, stops and timetables.',
+    });
+    const ariaSuggestionLen = this.context.intl.formatMessage(
+      {
+        id: 'search-autosuggest-len',
+        defaultMessage: 'There are {len} Suggestions available',
+      },
+      { len: suggestions.length },
+    );
     return (
       <div className={cx(['autosuggest-input-container', this.props.id])}>
-        <div className={cx(['autosuggest-input-icon', this.props.id])}>
-          <Icon img="icon-icon_mapMarker-point" />
-        </div>
+        {this.props.icon && (
+          <div className={cx(['autosuggest-input-icon', this.props.id])}>
+            <Icon img={`icon-icon_${this.props.icon}`} />
+          </div>
+        )}
         <Autosuggest
           id={this.props.id}
           suggestions={suggestions}
@@ -272,14 +341,23 @@ class DTAutosuggest extends React.Component {
           inputProps={inputProps}
           focusInputOnSuggestionClick={false}
           shouldRenderSuggestions={() => this.state.editing}
+          highlightFirstSuggestion
           renderInputComponent={p => (
-            <div id={`${this.props.id}-container`} style={{ display: 'flex' }}>
-              <input id={this.props.id} onClick={this.inputClicked} {...p} />
+            <>
+              <input
+                aria-label={SearchBarId.concat(' ').concat(ariaLabelText)}
+                id={this.props.id}
+                onClick={this.inputClicked}
+                onKeyDown={this.keyDown}
+                {...p}
+              />
+              <span className="sr-only" role="alert">
+                {ariaSuggestionLen}
+              </span>
               {this.clearButton()}
-            </div>
+            </>
           )}
           onSuggestionSelected={this.onSelected}
-          highlightFirstSuggestion
           ref={this.storeInputReference}
         />
       </div>

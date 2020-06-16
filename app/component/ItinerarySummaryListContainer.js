@@ -1,24 +1,31 @@
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useState } from 'react';
 import Relay from 'react-relay/classic';
 import { FormattedMessage } from 'react-intl';
 import inside from 'point-in-polygon';
 import cx from 'classnames';
 import startsWith from 'lodash/startsWith';
+
 import ExternalLink from './ExternalLink';
-import SummaryRow from './SummaryRow';
 import Icon from './Icon';
+import SummaryRow from './SummaryRow';
 import { isBrowser } from '../util/browser';
 import { distance } from '../util/geo-utils';
+import { getZones } from '../util/legUtils';
+import CanceledItineraryToggler from './CanceledItineraryToggler';
+import { RouteAlertsQuery, StopAlertsQuery } from '../util/alertQueries';
+import { itineraryHasCancelation } from '../util/alertUtils';
+import { matchQuickOption } from '../util/planParamUtil';
+import { getModes } from '../util/modeUtils';
 
 function ItinerarySummaryListContainer(
   {
     activeIndex,
     children,
     currentTime,
-    locationState,
     error,
     from,
+    locationState,
     intermediatePlaces,
     itineraries,
     onSelect,
@@ -27,8 +34,11 @@ function ItinerarySummaryListContainer(
     searchTime,
     to,
   },
-  { config },
+  context,
 ) {
+  const [showCancelled, setShowCancelled] = useState(false);
+  const { config } = context;
+
   if (!error && itineraries && itineraries.length > 0) {
     const openedIndex = open && Number(open);
     const summaries = itineraries.map((itinerary, i) => (
@@ -42,13 +52,28 @@ function ItinerarySummaryListContainer(
         onSelect={onSelect}
         onSelectImmediately={onSelectImmediately}
         intermediatePlaces={intermediatePlaces}
+        isCancelled={itineraryHasCancelation(itinerary)}
+        showCancelled={showCancelled}
+        zones={config.stopCard.header.showZone ? getZones(itinerary.legs) : []}
       >
         {i === openedIndex && children}
       </SummaryRow>
     ));
 
+    const canceledItinerariesCount = itineraries.filter(itineraryHasCancelation)
+      .length;
     return (
-      <div className="summary-list-container">{isBrowser && summaries}</div>
+      <div className="summary-list-container" role="list">
+        {isBrowser && summaries}
+        {isBrowser &&
+          canceledItinerariesCount > 0 && (
+            <CanceledItineraryToggler
+              showItineraries={showCancelled}
+              toggleShowCanceled={() => setShowCancelled(!showCancelled)}
+              canceledItinerariesAmount={canceledItinerariesCount}
+            />
+          )}
+      </div>
     );
   }
   if (!error && (!from.lat || !from.lon || !to.lat || !to.lon)) {
@@ -90,7 +115,23 @@ function ItinerarySummaryListContainer(
       msgId = 'no-route-origin-near-destination';
     }
   } else {
-    msgId = 'no-route-msg';
+    const quickOption = matchQuickOption(context);
+    const currentModes = getModes(context.location, context.config);
+    const modesDefault =
+      Object.entries(context.config.transportModes).every(
+        ([mode, modeConfig]) =>
+          currentModes.includes(mode.toUpperCase()) === modeConfig.defaultValue,
+      ) && currentModes.includes('PUBLIC_TRANSPORT');
+
+    const hasChanges =
+      quickOption === 'saved-settings' ||
+      quickOption === 'custom-settings' ||
+      !modesDefault;
+    if (hasChanges) {
+      msgId = 'no-route-msg-with-changes';
+    } else {
+      msgId = 'no-route-msg';
+    }
   }
 
   let linkPart = null;
@@ -161,17 +202,21 @@ ItinerarySummaryListContainer.defaultProps = {
 
 ItinerarySummaryListContainer.contextTypes = {
   config: PropTypes.object.isRequired,
+  location: PropTypes.object.isRequired,
 };
 
-export default Relay.createContainer(ItinerarySummaryListContainer, {
-  fragments: {
-    itineraries: () => Relay.QL`
+const containerComponent = Relay.createContainer(
+  ItinerarySummaryListContainer,
+  {
+    fragments: {
+      itineraries: () => Relay.QL`
       fragment on Itinerary @relay(plural:true){
         walkDistance
         startTime
         endTime
         legs {
           realTime
+          realtimeState
           transitLeg
           startTime
           endTime
@@ -180,6 +225,12 @@ export default Relay.createContainer(ItinerarySummaryListContainer, {
           duration
           rentedBike
           intermediatePlace
+          intermediatePlaces {
+            stop {
+              zoneId
+              ${StopAlertsQuery}
+            }
+          }
           route {
             mode
             shortName
@@ -187,13 +238,14 @@ export default Relay.createContainer(ItinerarySummaryListContainer, {
             agency {
               name
             }
+            ${RouteAlertsQuery}
           }
           trip {
-            alerts {
-              effectiveStartDate
-              effectiveEndDate
+            pattern {
+              code
             }
             stoptimes {
+              realtimeState
               stop {
                 gtfsId
               }
@@ -206,18 +258,29 @@ export default Relay.createContainer(ItinerarySummaryListContainer, {
             lon
             stop {
               gtfsId
+              zoneId
+              ${StopAlertsQuery}
             }
             bikeRentalStation {
               bikesAvailable
+              networks
             }
           }
           to {
             stop {
               gtfsId
+              zoneId
+              ${StopAlertsQuery}
             }
           }
         }
       }
     `,
+    },
   },
-});
+);
+
+export {
+  containerComponent as default,
+  ItinerarySummaryListContainer as Component,
+};

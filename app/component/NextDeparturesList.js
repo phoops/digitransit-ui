@@ -6,7 +6,7 @@ import Distance from './Distance';
 import RouteNumber from './RouteNumber';
 import RouteDestination from './RouteDestination';
 import DepartureTime from './DepartureTime';
-import { PREFIX_ROUTES } from '../util/path';
+import { PREFIX_ROUTES, PREFIX_STOPS } from '../util/path';
 
 // TODO: Alerts aren't showing properly
 // Need to implement logic as per DepartureListContainer
@@ -70,9 +70,10 @@ function NextDeparturesList(props, context) {
         context.router.push(val);
       };
 
+      // DT-3331: added query string sort=no to Link's to
       const departureLinkUrl = `/${PREFIX_ROUTES}/${
         stoptime.pattern.route.gtfsId
-      }/pysakit/${stoptime.pattern.code}`;
+      }/${PREFIX_STOPS}/${stoptime.pattern.code}?sort=no`;
 
       // In case there's only one departure for the route,
       // add a dummy cell to keep the table layout from breaking
@@ -100,9 +101,9 @@ function NextDeparturesList(props, context) {
           </td>
           <td className="td-route-number">
             <RouteNumber
+              alertSeverityLevel={departure.alertSeverityLevel}
               mode={stoptime.pattern.route.mode}
               text={stoptime.pattern.route.shortName}
-              hasDisruption={departure.hasDisruption}
             />
           </td>
           <td className="td-destination">
@@ -124,11 +125,10 @@ function NextDeparturesList(props, context) {
 
 NextDeparturesList.propTypes = {
   departures: PropTypes.array.isRequired,
-  currentTime: PropTypes.number.isRequired, // eslint-disable-line react/no-unused-prop-types
+  currentTime: PropTypes.number.isRequired,
 };
 
 NextDeparturesList.contextTypes = {
-  // eslint-disable-next-line react/no-typos
   router: routerShape.isRequired,
 };
 

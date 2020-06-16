@@ -4,7 +4,8 @@ import Relay from 'react-relay/classic';
 import { Link } from 'react-router';
 import cx from 'classnames';
 import IconWithTail from './IconWithTail';
-import { PREFIX_ROUTES } from '../util/path';
+import { PREFIX_ROUTES, PREFIX_STOPS } from '../util/path';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 function TripLink(props) {
   const icon = (
@@ -18,16 +19,25 @@ function TripLink(props) {
   if (props.trip.trip) {
     return (
       <Link
-        to={`/${PREFIX_ROUTES}/${props.trip.trip.route.gtfsId}/pysakit/${
-          props.trip.trip.pattern.code
-        }/${props.trip.trip.gtfsId}`}
+        to={`/${PREFIX_ROUTES}/${
+          props.trip.trip.route.gtfsId
+        }/${PREFIX_STOPS}/${props.trip.trip.pattern.code}/${
+          props.trip.trip.gtfsId
+        }`}
         className="route-now-content"
+        onClick={() => {
+          addAnalyticsEvent({
+            category: 'Route',
+            action: 'OpenTripInformation',
+            name: props.mode.toUpperCase(),
+          });
+        }}
       >
         {icon}
       </Link>
     );
   }
-
+  // eslint-disable-next-line no-console
   console.warn('Unable to match trip', props);
   return <span className="route-now-content">{icon}</span>;
 }
@@ -37,11 +47,11 @@ TripLink.propTypes = {
   mode: PropTypes.string.isRequired,
 };
 
-export default Relay.createContainer(TripLink, {
+const containerComponent = Relay.createContainer(TripLink, {
   fragments: {
     trip: () => Relay.QL`
       fragment on QueryType {
-        trip: fuzzyTrip(route: $route, direction: $direction, time: $time, date: $date) {
+        trip: trip(id: $id) {
           gtfsId
           pattern {
             code
@@ -54,9 +64,8 @@ export default Relay.createContainer(TripLink, {
     `,
   },
   initialVariables: {
-    route: null,
-    direction: null,
-    date: null,
-    time: null,
+    id: null,
   },
 });
+
+export { containerComponent as default, TripLink as Component };

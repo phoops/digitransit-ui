@@ -72,7 +72,7 @@
                     },
                     {
                         "name": "ticketTypes",
-                        "description": "**This API is experimental and might change without further notice**  \n Return list of available ticket types.",
+                        "description": "Return list of available ticket types",
                         "args": [],
                         "type": {
                             "kind": "LIST",
@@ -88,7 +88,7 @@
                     },
                     {
                         "name": "agency",
-                        "description": "Get a single agency based on agency ID",
+                        "description": "Get a single agency based on agency ID, i.e. value of field `gtfsId` (ID format is `FeedId:StopId`)",
                         "args": [
                             {
                                 "name": "id",
@@ -658,6 +658,20 @@
                                 "defaultValue": null
                             },
                             {
+                                "name": "feeds",
+                                "description": "Only return routes with these feedIds",
+                                "type": {
+                                    "kind": "LIST",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "SCALAR",
+                                        "name": "String",
+                                        "ofType": null
+                                    }
+                                },
+                                "defaultValue": null
+                            },
+                            {
                                 "name": "name",
                                 "description": "Query routes by this name",
                                 "type": {
@@ -734,7 +748,22 @@
                     {
                         "name": "trips",
                         "description": "Get all trips",
-                        "args": [],
+                        "args": [
+                            {
+                                "name": "feeds",
+                                "description": "Only return trips with these feedIds",
+                                "type": {
+                                    "kind": "LIST",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "SCALAR",
+                                        "name": "String",
+                                        "ofType": null
+                                    }
+                                },
+                                "defaultValue": null
+                            }
+                        ],
                         "type": {
                             "kind": "LIST",
                             "name": null,
@@ -835,6 +864,139 @@
                             "kind": "OBJECT",
                             "name": "Trip",
                             "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "cancelledTripTimes",
+                        "description": "Get cancelled TripTimes.",
+                        "args": [
+                            {
+                                "name": "feeds",
+                                "description": "Feed feedIds (e.g. [\"HSL\"]).",
+                                "type": {
+                                    "kind": "LIST",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "SCALAR",
+                                        "name": "String",
+                                        "ofType": null
+                                    }
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "routes",
+                                "description": "Route gtfsIds (e.g. [\"HSL:1098\"]).",
+                                "type": {
+                                    "kind": "LIST",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "SCALAR",
+                                        "name": "String",
+                                        "ofType": null
+                                    }
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "patterns",
+                                "description": "TripPattern codes (e.g. [\"HSL:1098:1:01\"]).",
+                                "type": {
+                                    "kind": "LIST",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "SCALAR",
+                                        "name": "String",
+                                        "ofType": null
+                                    }
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "trips",
+                                "description": "Trip gtfsIds (e.g. [\"HSL:1098_20190405_Ma_2_1455\"]).",
+                                "type": {
+                                    "kind": "LIST",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "SCALAR",
+                                        "name": "String",
+                                        "ofType": null
+                                    }
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "minDate",
+                                "description": "Only cancelled trip times scheduled to run on minDate or after are returned. Format: \"2019-12-23\" or \"20191223\".",
+                                "type": {
+                                    "kind": "SCALAR",
+                                    "name": "String",
+                                    "ofType": null
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "maxDate",
+                                "description": "Only cancelled trip times scheduled to run on maxDate or before are returned. Format: \"2019-12-23\" or \"20191223\".",
+                                "type": {
+                                    "kind": "SCALAR",
+                                    "name": "String",
+                                    "ofType": null
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "minDepartureTime",
+                                "description": "Only cancelled trip times that have first stop departure time at minDepartureTime or after are returned. Format: seconds since midnight of minDate.",
+                                "type": {
+                                    "kind": "SCALAR",
+                                    "name": "Int",
+                                    "ofType": null
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "maxDepartureTime",
+                                "description": "Only cancelled trip times that have first stop departure time at maxDepartureTime or before are returned. Format: seconds since midnight of maxDate.",
+                                "type": {
+                                    "kind": "SCALAR",
+                                    "name": "Int",
+                                    "ofType": null
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "minArrivalTime",
+                                "description": "Only cancelled trip times that have last stop arrival time at minArrivalTime or after are returned. Format: seconds since midnight of minDate.",
+                                "type": {
+                                    "kind": "SCALAR",
+                                    "name": "Int",
+                                    "ofType": null
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "maxArrivalTime",
+                                "description": "Only cancelled trip times that have last stop arrival time at maxArrivalTime or before are returned. Format: seconds since midnight of maxDate.",
+                                "type": {
+                                    "kind": "SCALAR",
+                                    "name": "Int",
+                                    "ofType": null
+                                },
+                                "defaultValue": null
+                            }
+                        ],
+                        "type": {
+                            "kind": "LIST",
+                            "name": null,
+                            "ofType": {
+                                "kind": "OBJECT",
+                                "name": "Stoptime",
+                                "ofType": null
+                            }
                         },
                         "isDeprecated": false,
                         "deprecationReason": null
@@ -941,6 +1103,60 @@
                                         "ofType": {
                                             "kind": "SCALAR",
                                             "name": "String",
+                                            "ofType": null
+                                        }
+                                    }
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "severityLevel",
+                                "description": "Only return alerts with these severity levels",
+                                "type": {
+                                    "kind": "LIST",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "NON_NULL",
+                                        "name": null,
+                                        "ofType": {
+                                            "kind": "ENUM",
+                                            "name": "AlertSeverityLevelType",
+                                            "ofType": null
+                                        }
+                                    }
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "effect",
+                                "description": "Only return alerts with these effects",
+                                "type": {
+                                    "kind": "LIST",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "NON_NULL",
+                                        "name": null,
+                                        "ofType": {
+                                            "kind": "ENUM",
+                                            "name": "AlertEffectType",
+                                            "ofType": null
+                                        }
+                                    }
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "cause",
+                                "description": "Only return alerts with these causes",
+                                "type": {
+                                    "kind": "LIST",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "NON_NULL",
+                                        "name": null,
+                                        "ofType": {
+                                            "kind": "ENUM",
+                                            "name": "AlertCauseType",
                                             "ofType": null
                                         }
                                     }
@@ -1622,11 +1838,25 @@
                             },
                             {
                                 "name": "ticketTypes",
-                                "description": "A comma-separated list of allowed ticket types.",
+                                "description": "**Deprecated:** Use `allowedTicketTypes` instead.  \nA comma-separated list of allowed ticket types.",
                                 "type": {
                                     "kind": "SCALAR",
                                     "name": "String",
                                     "ofType": null
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "allowedTicketTypes",
+                                "description": "List of ticket types that are allowed to be used in itineraries.  \nSee `ticketTypes` query for list of possible ticket types.",
+                                "type": {
+                                    "kind": "LIST",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "SCALAR",
+                                        "name": "String",
+                                        "ofType": null
+                                    }
                                 },
                                 "defaultValue": null
                             },
@@ -1647,6 +1877,20 @@
                                     "kind": "SCALAR",
                                     "name": "Boolean",
                                     "ofType": null
+                                },
+                                "defaultValue": null
+                            },
+                            {
+                                "name": "allowedBikeRentalNetworks",
+                                "description": "Which bike rental networks can be used. By default, all networks are allowed.",
+                                "type": {
+                                    "kind": "LIST",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "SCALAR",
+                                        "name": "String",
+                                        "ofType": null
+                                    }
                                 },
                                 "defaultValue": null
                             }
@@ -1849,7 +2093,7 @@
                     },
                     {
                         "name": "gtfsId",
-                        "description": "Agency id",
+                        "description": "Agency feed and id",
                         "args": [],
                         "type": {
                             "kind": "NON_NULL",
@@ -3197,7 +3441,7 @@
                     },
                     {
                         "name": "zoneId",
-                        "description": null,
+                        "description": "ID of the zone where this stop is located",
                         "args": [],
                         "type": {
                             "kind": "SCALAR",
@@ -3438,7 +3682,7 @@
                                     "name": "Boolean",
                                     "ofType": null
                                 },
-                                "defaultValue": "true"
+                                "defaultValue": "false"
                             }
                         ],
                         "type": {
@@ -3581,6 +3825,22 @@
                             "ofType": {
                                 "kind": "OBJECT",
                                 "name": "Stoptime",
+                                "ofType": null
+                            }
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "alerts",
+                        "description": "List of alerts which have an effect on this stop",
+                        "args": [],
+                        "type": {
+                            "kind": "LIST",
+                            "name": null,
+                            "ofType": {
+                                "kind": "OBJECT",
+                                "name": "Alert",
                                 "ofType": null
                             }
                         },
@@ -3874,6 +4134,523 @@
                 "inputFields": null,
                 "interfaces": [],
                 "enumValues": null,
+                "possibleTypes": null
+            },
+            {
+                "kind": "OBJECT",
+                "name": "Alert",
+                "description": "Alert of a current or upcoming disruption in public transportation",
+                "fields": [
+                    {
+                        "name": "id",
+                        "description": "Global object ID provided by Relay. This value can be used to refetch this object using **node** query.",
+                        "args": [],
+                        "type": {
+                            "kind": "NON_NULL",
+                            "name": null,
+                            "ofType": {
+                                "kind": "SCALAR",
+                                "name": "ID",
+                                "ofType": null
+                            }
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "alertHash",
+                        "description": "hashcode from the original GTFS-RT alert",
+                        "args": [],
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "Int",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "feed",
+                        "description": "The feed in which this alert was published",
+                        "args": [],
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "String",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "agency",
+                        "description": "Agency affected by the disruption. Note that this value is present only if the disruption has an effect on all operations of the agency (e.g. in case of a strike).",
+                        "args": [],
+                        "type": {
+                            "kind": "OBJECT",
+                            "name": "Agency",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "route",
+                        "description": "Route affected by the disruption",
+                        "args": [],
+                        "type": {
+                            "kind": "OBJECT",
+                            "name": "Route",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "trip",
+                        "description": "Trip affected by the disruption",
+                        "args": [],
+                        "type": {
+                            "kind": "OBJECT",
+                            "name": "Trip",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "stop",
+                        "description": "Stop affected by the disruption",
+                        "args": [],
+                        "type": {
+                            "kind": "OBJECT",
+                            "name": "Stop",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "patterns",
+                        "description": "Patterns affected by the disruption",
+                        "args": [],
+                        "type": {
+                            "kind": "LIST",
+                            "name": null,
+                            "ofType": {
+                                "kind": "OBJECT",
+                                "name": "Pattern",
+                                "ofType": null
+                            }
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "alertHeaderText",
+                        "description": "Header of the alert, if available",
+                        "args": [],
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "String",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "alertHeaderTextTranslations",
+                        "description": "Header of the alert in all different available languages",
+                        "args": [],
+                        "type": {
+                            "kind": "NON_NULL",
+                            "name": null,
+                            "ofType": {
+                                "kind": "LIST",
+                                "name": null,
+                                "ofType": {
+                                    "kind": "NON_NULL",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "OBJECT",
+                                        "name": "TranslatedString",
+                                        "ofType": null
+                                    }
+                                }
+                            }
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "alertDescriptionText",
+                        "description": "Long description of the alert",
+                        "args": [],
+                        "type": {
+                            "kind": "NON_NULL",
+                            "name": null,
+                            "ofType": {
+                                "kind": "SCALAR",
+                                "name": "String",
+                                "ofType": null
+                            }
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "alertDescriptionTextTranslations",
+                        "description": "Long descriptions of the alert in all different available languages",
+                        "args": [],
+                        "type": {
+                            "kind": "NON_NULL",
+                            "name": null,
+                            "ofType": {
+                                "kind": "LIST",
+                                "name": null,
+                                "ofType": {
+                                    "kind": "NON_NULL",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "OBJECT",
+                                        "name": "TranslatedString",
+                                        "ofType": null
+                                    }
+                                }
+                            }
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "alertUrl",
+                        "description": "Url with more information",
+                        "args": [],
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "String",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "alertUrlTranslations",
+                        "description": "Url with more information in all different available languages",
+                        "args": [],
+                        "type": {
+                            "kind": "NON_NULL",
+                            "name": null,
+                            "ofType": {
+                                "kind": "LIST",
+                                "name": null,
+                                "ofType": {
+                                    "kind": "NON_NULL",
+                                    "name": null,
+                                    "ofType": {
+                                        "kind": "OBJECT",
+                                        "name": "TranslatedString",
+                                        "ofType": null
+                                    }
+                                }
+                            }
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "alertEffect",
+                        "description": "Alert effect",
+                        "args": [],
+                        "type": {
+                            "kind": "ENUM",
+                            "name": "AlertEffectType",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "alertCause",
+                        "description": "Alert cause",
+                        "args": [],
+                        "type": {
+                            "kind": "ENUM",
+                            "name": "AlertCauseType",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "alertSeverityLevel",
+                        "description": "Alert severity level",
+                        "args": [],
+                        "type": {
+                            "kind": "ENUM",
+                            "name": "AlertSeverityLevelType",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "effectiveStartDate",
+                        "description": "Time when this alert comes into effect. Format: Unix timestamp in seconds",
+                        "args": [],
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "Long",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "effectiveEndDate",
+                        "description": "Time when this alert is not in effect anymore. Format: Unix timestamp in seconds",
+                        "args": [],
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "Long",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    }
+                ],
+                "inputFields": null,
+                "interfaces": [
+                    {
+                        "kind": "INTERFACE",
+                        "name": "Node",
+                        "ofType": null
+                    }
+                ],
+                "enumValues": null,
+                "possibleTypes": null
+            },
+            {
+                "kind": "OBJECT",
+                "name": "TranslatedString",
+                "description": "Text with language",
+                "fields": [
+                    {
+                        "name": "text",
+                        "description": null,
+                        "args": [],
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "String",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "language",
+                        "description": "Two-letter language code (ISO 639-1)",
+                        "args": [],
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "String",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    }
+                ],
+                "inputFields": null,
+                "interfaces": [],
+                "enumValues": null,
+                "possibleTypes": null
+            },
+            {
+                "kind": "ENUM",
+                "name": "AlertEffectType",
+                "description": "Effect of a alert",
+                "fields": null,
+                "inputFields": null,
+                "interfaces": null,
+                "enumValues": [
+                    {
+                        "name": "NO_SERVICE",
+                        "description": "NO_SERVICE",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "REDUCED_SERVICE",
+                        "description": "REDUCED_SERVICE",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "SIGNIFICANT_DELAYS",
+                        "description": "SIGNIFICANT_DELAYS",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "DETOUR",
+                        "description": "DETOUR",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "ADDITIONAL_SERVICE",
+                        "description": "ADDITIONAL_SERVICE",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "MODIFIED_SERVICE",
+                        "description": "MODIFIED_SERVICE",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "OTHER_EFFECT",
+                        "description": "OTHER_EFFECT",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "UNKNOWN_EFFECT",
+                        "description": "UNKNOWN_EFFECT",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "STOP_MOVED",
+                        "description": "STOP_MOVED",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "NO_EFFECT",
+                        "description": "NO_EFFECT",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    }
+                ],
+                "possibleTypes": null
+            },
+            {
+                "kind": "ENUM",
+                "name": "AlertCauseType",
+                "description": "Cause of a alert",
+                "fields": null,
+                "inputFields": null,
+                "interfaces": null,
+                "enumValues": [
+                    {
+                        "name": "UNKNOWN_CAUSE",
+                        "description": "UNKNOWN_CAUSE",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "OTHER_CAUSE",
+                        "description": "OTHER_CAUSE",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "TECHNICAL_PROBLEM",
+                        "description": "TECHNICAL_PROBLEM",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "STRIKE",
+                        "description": "STRIKE",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "DEMONSTRATION",
+                        "description": "DEMONSTRATION",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "ACCIDENT",
+                        "description": "ACCIDENT",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "HOLIDAY",
+                        "description": "HOLIDAY",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "WEATHER",
+                        "description": "WEATHER",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "MAINTENANCE",
+                        "description": "MAINTENANCE",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "CONSTRUCTION",
+                        "description": "CONSTRUCTION",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "POLICE_ACTIVITY",
+                        "description": "POLICE_ACTIVITY",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "MEDICAL_EMERGENCY",
+                        "description": "MEDICAL_EMERGENCY",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    }
+                ],
+                "possibleTypes": null
+            },
+            {
+                "kind": "ENUM",
+                "name": "AlertSeverityLevelType",
+                "description": "Severity level of a alert",
+                "fields": null,
+                "inputFields": null,
+                "interfaces": null,
+                "enumValues": [
+                    {
+                        "name": "UNKNOWN_SEVERITY",
+                        "description": "Severity of alert is unknown",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "INFO",
+                        "description": "Info alerts are used for informational messages that should not have a significant effect on user's journey, for example: A single entrance to a metro station is temporarily closed.",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "WARNING",
+                        "description": "Warning alerts are used when a single stop or route has a disruption that can affect user's journey, for example: All trams on a specific route are running with irregular schedules.",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "SEVERE",
+                        "description": "Severe alerts are used when a significant part of public transport services is affected, for example: All train services are cancelled due to technical problems.",
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    }
+                ],
                 "possibleTypes": null
             },
             {
@@ -4279,262 +5056,6 @@
             },
             {
                 "kind": "OBJECT",
-                "name": "Alert",
-                "description": "Alert of a current or upcoming disruption in public transportation",
-                "fields": [
-                    {
-                        "name": "id",
-                        "description": "Global object ID provided by Relay. This value can be used to refetch this object using **node** query.",
-                        "args": [],
-                        "type": {
-                            "kind": "NON_NULL",
-                            "name": null,
-                            "ofType": {
-                                "kind": "SCALAR",
-                                "name": "ID",
-                                "ofType": null
-                            }
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "feed",
-                        "description": "The feed in which this alert was published",
-                        "args": [],
-                        "type": {
-                            "kind": "SCALAR",
-                            "name": "String",
-                            "ofType": null
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "agency",
-                        "description": "Agency affected by the disruption. Note that this value is present only if the disruption has an effect on all operations of the agency (e.g. in case of a strike).",
-                        "args": [],
-                        "type": {
-                            "kind": "OBJECT",
-                            "name": "Agency",
-                            "ofType": null
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "route",
-                        "description": "Route affected by the disruption",
-                        "args": [],
-                        "type": {
-                            "kind": "OBJECT",
-                            "name": "Route",
-                            "ofType": null
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "trip",
-                        "description": "Trip affected by the disruption",
-                        "args": [],
-                        "type": {
-                            "kind": "OBJECT",
-                            "name": "Trip",
-                            "ofType": null
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "stop",
-                        "description": "Stop affected by the disruption",
-                        "args": [],
-                        "type": {
-                            "kind": "OBJECT",
-                            "name": "Stop",
-                            "ofType": null
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "patterns",
-                        "description": "Patterns affected by the disruption",
-                        "args": [],
-                        "type": {
-                            "kind": "LIST",
-                            "name": null,
-                            "ofType": {
-                                "kind": "OBJECT",
-                                "name": "Pattern",
-                                "ofType": null
-                            }
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "alertHeaderText",
-                        "description": "Header of the alert, if available",
-                        "args": [],
-                        "type": {
-                            "kind": "SCALAR",
-                            "name": "String",
-                            "ofType": null
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "alertHeaderTextTranslations",
-                        "description": "Header of the alert in all different available languages",
-                        "args": [],
-                        "type": {
-                            "kind": "NON_NULL",
-                            "name": null,
-                            "ofType": {
-                                "kind": "LIST",
-                                "name": null,
-                                "ofType": {
-                                    "kind": "NON_NULL",
-                                    "name": null,
-                                    "ofType": {
-                                        "kind": "OBJECT",
-                                        "name": "TranslatedString",
-                                        "ofType": null
-                                    }
-                                }
-                            }
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "alertDescriptionText",
-                        "description": "Long description of the alert",
-                        "args": [],
-                        "type": {
-                            "kind": "NON_NULL",
-                            "name": null,
-                            "ofType": {
-                                "kind": "SCALAR",
-                                "name": "String",
-                                "ofType": null
-                            }
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "alertDescriptionTextTranslations",
-                        "description": "Long descriptions of the alert in all different available languages",
-                        "args": [],
-                        "type": {
-                            "kind": "NON_NULL",
-                            "name": null,
-                            "ofType": {
-                                "kind": "LIST",
-                                "name": null,
-                                "ofType": {
-                                    "kind": "NON_NULL",
-                                    "name": null,
-                                    "ofType": {
-                                        "kind": "OBJECT",
-                                        "name": "TranslatedString",
-                                        "ofType": null
-                                    }
-                                }
-                            }
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "alertUrl",
-                        "description": "Url with more information",
-                        "args": [],
-                        "type": {
-                            "kind": "SCALAR",
-                            "name": "String",
-                            "ofType": null
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "effectiveStartDate",
-                        "description": "Time when this alert comes into effect. Format: Unix timestamp in seconds",
-                        "args": [],
-                        "type": {
-                            "kind": "SCALAR",
-                            "name": "Long",
-                            "ofType": null
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "effectiveEndDate",
-                        "description": "Time when this alert is not in effect anymore. Format: Unix timestamp in seconds",
-                        "args": [],
-                        "type": {
-                            "kind": "SCALAR",
-                            "name": "Long",
-                            "ofType": null
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    }
-                ],
-                "inputFields": null,
-                "interfaces": [
-                    {
-                        "kind": "INTERFACE",
-                        "name": "Node",
-                        "ofType": null
-                    }
-                ],
-                "enumValues": null,
-                "possibleTypes": null
-            },
-            {
-                "kind": "OBJECT",
-                "name": "TranslatedString",
-                "description": "Text with language",
-                "fields": [
-                    {
-                        "name": "text",
-                        "description": null,
-                        "args": [],
-                        "type": {
-                            "kind": "SCALAR",
-                            "name": "String",
-                            "ofType": null
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    },
-                    {
-                        "name": "language",
-                        "description": "Two-letter language code (ISO 639-1)",
-                        "args": [],
-                        "type": {
-                            "kind": "SCALAR",
-                            "name": "String",
-                            "ofType": null
-                        },
-                        "isDeprecated": false,
-                        "deprecationReason": null
-                    }
-                ],
-                "inputFields": null,
-                "interfaces": [],
-                "enumValues": null,
-                "possibleTypes": null
-            },
-            {
-                "kind": "OBJECT",
                 "name": "Coordinates",
                 "description": null,
                 "fields": [
@@ -4571,7 +5092,7 @@
             {
                 "kind": "OBJECT",
                 "name": "TicketType",
-                "description": "**This API is experimental and might change without further notice**  \n Describes ticket type",
+                "description": "Describes ticket type",
                 "fields": [
                     {
                         "name": "id",
@@ -4591,7 +5112,7 @@
                     },
                     {
                         "name": "fareId",
-                        "description": null,
+                        "description": "Ticket type ID in format `FeedId:TicketTypeId`. Ticket type IDs are usually combination of ticket zones where the ticket is valid.",
                         "args": [],
                         "type": {
                             "kind": "NON_NULL",
@@ -4607,12 +5128,44 @@
                     },
                     {
                         "name": "price",
-                        "description": null,
+                        "description": "Price of the ticket in currency that is specified in `currency` field",
                         "args": [],
                         "type": {
                             "kind": "SCALAR",
                             "name": "Float",
                             "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "currency",
+                        "description": "ISO 4217 currency code",
+                        "args": [],
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "String",
+                            "ofType": null
+                        },
+                        "isDeprecated": false,
+                        "deprecationReason": null
+                    },
+                    {
+                        "name": "zones",
+                        "description": "List of zones where this ticket is valid.\n  Corresponds to field `zoneId` in **Stop** type.",
+                        "args": [],
+                        "type": {
+                            "kind": "LIST",
+                            "name": null,
+                            "ofType": {
+                                "kind": "NON_NULL",
+                                "name": null,
+                                "ofType": {
+                                    "kind": "SCALAR",
+                                    "name": "String",
+                                    "ofType": null
+                                }
+                            }
                         },
                         "isDeprecated": false,
                         "deprecationReason": null
@@ -6558,7 +7111,7 @@
                 "fields": [
                     {
                         "name": "fareId",
-                        "description": null,
+                        "description": "ID of the ticket type. Corresponds to `fareId` in **TicketType**.",
                         "args": [],
                         "type": {
                             "kind": "SCALAR",
@@ -6895,6 +7448,16 @@
                         "type": {
                             "kind": "SCALAR",
                             "name": "String",
+                            "ofType": null
+                        },
+                        "defaultValue": null
+                    },
+                    {
+                        "name": "useUnpreferredRoutesPenalty",
+                        "description": "Penalty added for using route that is unpreferred, i.e. number of seconds that we are willing to wait for route that is unpreferred.",
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "Int",
                             "ofType": null
                         },
                         "defaultValue": null

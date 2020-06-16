@@ -9,13 +9,21 @@ import SelectedStopPopup from './map/popups/SelectedStopPopup';
 import SelectedStopPopupContent from './SelectedStopPopupContent';
 import Icon from './Icon';
 import withBreakpoint from '../util/withBreakpoint';
+import VehicleMarkerContainer from './map/VehicleMarkerContainer';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
+import { PREFIX_STOPS, PREFIX_TERMINALS } from '../util/path';
 
 const getFullscreenTogglePath = (fullscreenMap, params) =>
-  `/${params.stopId ? 'pysakit' : 'terminaalit'}/${
+  `/${params.stopId ? PREFIX_STOPS : PREFIX_TERMINALS}/${
     params.stopId ? params.stopId : params.terminalId
   }${fullscreenMap ? '' : '/kartta'}`;
 
 const toggleFullscreenMap = (fullscreenMap, params, router) => {
+  addAnalyticsEvent({
+    action: fullscreenMap ? 'MinimizeMapOnMobile' : 'MaximizeMapOnMobile',
+    category: 'Map',
+    name: 'StopPage',
+  });
   if (fullscreenMap) {
     router.goBack();
     return;
@@ -54,7 +62,10 @@ const fullscreenMapToggle = (fullscreenMap, params, router) => (
 );
 /* eslint-enable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
 
-const StopPageMap = ({ stop, routes, params, breakpoint }, { router }) => {
+const StopPageMap = (
+  { stop, routes, params, breakpoint },
+  { router, config },
+) => {
   if (!stop) {
     return false;
   }
@@ -62,6 +73,11 @@ const StopPageMap = ({ stop, routes, params, breakpoint }, { router }) => {
   const fullscreenMap = some(routes, 'fullscreenMap');
   const leafletObjs = [];
   const children = [];
+  if (config.showVehiclesOnStopPage) {
+    leafletObjs.push(
+      <VehicleMarkerContainer key="vehicles" useLargeIcon ignoreMode />,
+    );
+  }
 
   if (breakpoint === 'large') {
     leafletObjs.push(
@@ -94,6 +110,7 @@ const StopPageMap = ({ stop, routes, params, breakpoint }, { router }) => {
 
 StopPageMap.contextTypes = {
   router: routerShape.isRequired,
+  config: PropTypes.object.isRequired,
 };
 
 StopPageMap.propTypes = {
@@ -101,7 +118,7 @@ StopPageMap.propTypes = {
     lat: PropTypes.number.isRequired,
     lon: PropTypes.number.isRequired,
     platformCode: PropTypes.string,
-  }).isRequired,
+  }),
   routes: PropTypes.arrayOf(
     PropTypes.shape({
       fullscreenMap: PropTypes.string,
@@ -114,7 +131,11 @@ StopPageMap.propTypes = {
   breakpoint: PropTypes.string.isRequired,
 };
 
-export default Relay.createContainer(withBreakpoint(StopPageMap), {
+StopPageMap.defaultProps = {
+  stop: undefined,
+};
+
+const containerComponent = Relay.createContainer(withBreakpoint(StopPageMap), {
   fragments: {
     stop: () => Relay.QL`
       fragment on Stop {
@@ -128,3 +149,5 @@ export default Relay.createContainer(withBreakpoint(StopPageMap), {
     `,
   },
 });
+
+export { containerComponent as default, StopPageMap as Component };

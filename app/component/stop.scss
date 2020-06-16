@@ -30,6 +30,26 @@
   }
 }
 
+.stop-no-alerts-container,
+.stop-no-departures-container {
+  align-items: center;
+  background-color: white;
+  color: $gray;
+  display: flex;
+  flex: 1 0 6em;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+
+  @media print {
+    display: none;
+  }
+
+  .icon {
+    font-size: 2.5em;
+  }
+}
+
 .stop-scroll-container {
   flex-basis: 0px;
   flex-grow: 1;
@@ -104,12 +124,6 @@
   }
 }
 
-.mobile {
-  .stop-tab-container {
-    border-bottom: none;
-  }
-}
-
 .stop-tabs-fillerline {
   height: 10px;
   background: $white;
@@ -132,7 +146,6 @@
   border-top: 4px solid $background-color;
   color: $primary-color;
   transition: 0.1s all ease-in;
-  border-right: 1px solid $light-gray;
   border-bottom: 1px solid $light-gray;
   padding-bottom: 0.8em;
   padding-top: 0;
@@ -141,6 +154,10 @@
   padding-right: 0.8em;
   height: 5.8em;
   text-decoration: none;
+
+  + .stop-tab-singletab {
+    border-left: 1px solid $light-gray;
+  }
 
   svg {
     stroke: $primary-color;
@@ -157,6 +174,39 @@
       stroke: $black;
       fill: $black;
     }
+    .no-alerts span {
+      color: $black;
+    }
+    .no-alerts.icon {
+      fill: $black;
+    }
+    .active-disruption-alert.icon {
+      fill: $black;
+    }
+    .active-service-alert.icon {
+      stroke: $black;
+      fill: $black;
+    }
+  }
+
+  &.alert-active {
+    .icon {
+      fill: $cancelation-red;
+    }
+  }
+
+  .no-alerts span {
+    color: rgb(183, 183, 183);
+  }
+  .no-alerts.icon {
+    fill: rgb(183, 183, 183);
+  }
+  .active-disruption-alert.icon {
+    fill: $cancelation-red
+  }
+  .active-service-alert.icon {
+    stroke: $primary-color;
+    fill: $primary-color;
   }
 
   @media print {
@@ -271,6 +321,31 @@
   .external-link-icon {
     color: $gray-blue;
   }
+}
+.external-stop-link {
+  float:right;
+
+  a {
+    color: $link-color !important;
+    text-decoration: none;
+    @include font-medium;
+  }
+
+  .external-link-icon-outer {
+    color: white;
+  }
+
+  .external-link-icon {
+    color: $primary-color;
+  }
+}
+
+.external-stop-link-font {
+  display: inline-block;
+  vertical-align: text-top;
+  color: blue;
+  font-size: $font-size-xxsmall;
+  text-decoration: none;
 }
 
 hr.action-bar {
@@ -488,12 +563,6 @@ hr.action-bar {
   }
 }
 
-.mobile {
-  .print-button-container {
-    display: none;
-  }
-}
-
 .timetable-for-printing {
   display: none;
   @media print {
@@ -574,6 +643,14 @@ hr.action-bar {
 }
 
 .mobile {
+  .print-button-container {
+    display: none;
+  }
+
+  .stop-tab-container {
+    border-bottom: none;
+  }
+
   .filter-stop-modal {
     min-height: 100%;
     max-width: 100%;
@@ -593,10 +670,4 @@ hr.action-bar {
   .showroutes-header {
     width: 41%;
   }
-}
-
-.no-stop-alerts-message {
-  background-color: white;
-  padding: 2em 1em;
-  text-align: center;
 }

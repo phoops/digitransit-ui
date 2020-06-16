@@ -11,7 +11,7 @@ import Icon from './Icon';
 import RouteNumber from './RouteNumber';
 import LegAgencyInfo from './LegAgencyInfo';
 import CityBikeMarker from './map/non-tile-layer/CityBikeMarker';
-import PrintableItineraryHeader from './/PrintableItineraryHeader';
+import PrintableItineraryHeader from './PrintableItineraryHeader';
 import {
   compressLegs,
   getLegMode,
@@ -20,7 +20,7 @@ import {
 import MapContainer from './map/MapContainer';
 import ItineraryLine from './map/ItineraryLine';
 import RouteLine from './map/route/RouteLine';
-import LocationMarker from '../component/map/LocationMarker';
+import LocationMarker from './map/LocationMarker';
 
 const getHeadSignFormat = (sentLegObj, isReturningRentedBike = false) => {
   const stopcode = sentLegObj.from.stop !== null && (
@@ -103,7 +103,7 @@ const getHeadSignDetails = sentLegObj => {
   }
 
   return (
-    <div>
+    <div key="headsign">
       <span>{transitMode}</span>
       <span>{headSignDetails}</span>
     </div>
@@ -111,7 +111,7 @@ const getHeadSignDetails = sentLegObj => {
 };
 
 const getItineraryStops = sentLegObj => (
-  <div className="intermediate-stops">
+  <div key="intermediate-stops" className="intermediate-stops">
     <div className="intermediate-stops-count">
       <FormattedMessage
         id="number-of-intermediate-stops"
@@ -127,11 +127,11 @@ const getItineraryStops = sentLegObj => (
         {` (${durationToString(sentLegObj.duration * 1000)})`}
       </span>
     </div>
-    {sentLegObj.intermediatePlaces.map(o2 => (
-      <div key={o2.gtfsId} className="intermediate-stop-single">
-        <span className="print-itinerary-stop-shortname">{o2.stop.name}</span>
+    {sentLegObj.intermediatePlaces.map(({ stop }) => (
+      <div key={stop.gtfsId} className="intermediate-stop-single">
+        <span className="print-itinerary-stop-shortname">{stop.name}</span>
         <span className="print-itinerary-stop-code">
-          {o2.stop.code !== null ? ` [${o2.stop.code}]` : ``}
+          {stop.code !== null ? ` [${stop.code}]` : ``}
         </span>
       </div>
     ))}
@@ -139,22 +139,23 @@ const getItineraryStops = sentLegObj => (
 );
 
 export function TransferMap(props) {
-  const bounds = [].concat(polyline.decode(props.legObj.legGeometry.points));
-  const nextLeg = props.originalLegs[props.index + 1];
-  const previousLeg = props.originalLegs[props.index - 1];
+  const { index, legObj, originalLegs } = props;
+  const bounds = [].concat(polyline.decode(legObj.legGeometry.points));
+  const nextLeg = originalLegs[index + 1];
+  const previousLeg = originalLegs[index - 1];
 
   let itineraryLine;
   if (
     ((!previousLeg && !nextLeg) || (nextLeg && nextLeg.intermediatePlace)) &&
-    props.originalLegs.length > 1
+    originalLegs.length > 1
   ) {
-    itineraryLine = [props.legObj];
-  } else if (props.originalLegs.length > 1 && !nextLeg) {
-    itineraryLine = [previousLeg, props.legObj];
-  } else if (props.originalLegs.length === 1) {
-    itineraryLine = [props.legObj];
+    itineraryLine = [legObj];
+  } else if (originalLegs.length > 1 && !nextLeg) {
+    itineraryLine = [previousLeg, legObj];
+  } else if (originalLegs.length === 1) {
+    itineraryLine = [legObj];
   } else {
-    itineraryLine = [props.legObj, nextLeg];
+    itineraryLine = [legObj, nextLeg];
   }
 
   const leafletObjs = [
@@ -165,46 +166,33 @@ export function TransferMap(props) {
       showIntermediateStops
     />,
   ];
-  if (props.index === 0) {
+  if (index === 0) {
     leafletObjs.push(
-      <LocationMarker
-        key="fromMarker"
-        position={props.legObj.from}
-        className="from"
-      />,
+      <LocationMarker key="fromMarker" position={legObj.from} type="from" />,
     );
   }
 
   if (!nextLeg) {
     leafletObjs.push(
-      <LocationMarker
-        key="toMarker"
-        position={props.legObj.to}
-        className="to"
-      />,
+      <LocationMarker key="toMarker" isLarge position={legObj.to} type="to" />,
     );
   }
 
-  if (nextLeg) {
-    if (nextLeg.intermediatePlace === true) {
-      leafletObjs.push(
-        <LocationMarker key="via" position={props.legObj.to} className="via" />,
-      );
-    }
+  if (nextLeg && nextLeg.intermediatePlace === true) {
+    leafletObjs.push(<LocationMarker key="via" position={legObj.to} />);
   }
 
-  if (props.legObj.intermediatePlace === true) {
-    leafletObjs.push(
-      <LocationMarker key="via" position={props.legObj.from} className="via" />,
-    );
+  if (legObj.intermediatePlace === true) {
+    leafletObjs.push(<LocationMarker key="via" position={legObj.from} />);
   }
+
   return (
     <div className="transfermap-container">
       <MapContainer
         bounds={bounds}
         leafletObjs={leafletObjs}
         className="print-itinerary-map"
-        fitBounds={bounds}
+        fitBounds
         zoom={17}
         showScaleBar={false}
         showStops
@@ -289,7 +277,7 @@ export function PrintableLeg(props) {
         <div className="line-circle">
           {index === 0 ? (
             <Icon
-              img="icon-icon_mapMarker-point"
+              img="icon-icon_mapMarker-from"
               className="itinerary-icon from from-it"
             />
           ) : (
@@ -352,7 +340,8 @@ class PrintableItinerary extends React.Component {
   }
 
   render() {
-    const originalLegs = this.props.itinerary.legs;
+    const { itinerary } = this.props;
+    const originalLegs = itinerary.legs;
     const compressedLegs = compressLegs(originalLegs);
     const legs = compressedLegs.map((o, i) => {
       if (o.mode !== 'AIRPLANE') {
@@ -368,10 +357,8 @@ class PrintableItinerary extends React.Component {
         cloneObj.mode = specialMode === false ? cloneObj.mode : specialMode;
         return (
           <div
-            key={o.client}
-            className={`print-itinerary-leg
-                ${o.mode.toLowerCase()}
-                `}
+            key={o.startTime}
+            className={`print-itinerary-leg ${o.mode.toLowerCase()}`}
           >
             <PrintableLeg
               legObj={cloneObj}
@@ -379,14 +366,17 @@ class PrintableItinerary extends React.Component {
               originalLegs={originalLegs}
               context={this.context}
               mapsLoaded={() =>
-                this.setState({ mapsLoaded: this.state.mapsLoaded + 1 }, () => {
-                  if (
-                    this.state.mapsLoaded >=
-                    compressedLegs.filter(o2 => isWalking(o2)).length
-                  ) {
-                    setTimeout(() => window.print(), 1000);
-                  }
-                })
+                this.setState(
+                  prevState => ({ mapsLoaded: prevState.mapsLoaded + 1 }),
+                  () => {
+                    if (
+                      this.state.mapsLoaded >=
+                      compressedLegs.filter(o2 => isWalking(o2)).length
+                    ) {
+                      setTimeout(() => window.print(), 1000);
+                    }
+                  },
+                )
               }
             />
           </div>
@@ -403,10 +393,8 @@ class PrintableItinerary extends React.Component {
       luggage.isLuggage = true;
       return (
         <div
-          key={o.client}
-          className={`print-itinerary-leg
-        ${o.mode.toLowerCase()}
-        `}
+          key={o.startTime}
+          className={`print-itinerary-leg ${o.mode.toLowerCase()}`}
         >
           <PrintableLeg
             legObj={checkin}
@@ -430,7 +418,7 @@ class PrintableItinerary extends React.Component {
       );
     });
     legs.push(
-      <div className="print-itinerary-leg end">
+      <div key="end" className="print-itinerary-leg end">
         <div className="print-itinerary-leg-container">
           <div className="itinerary-left">
             <div className="itinerary-timestamp">
@@ -440,16 +428,13 @@ class PrintableItinerary extends React.Component {
           </div>
           <div className="itinerary-circleline end">
             <Icon
-              img="icon-icon_mapMarker-point"
+              img="icon-icon_mapMarker-to"
               className="itinerary-icon to to-it"
             />
           </div>
           <div className="itinerary-center end">
             <div className="itinerary-leg-stopname">
-              {
-                this.props.itinerary.legs[this.props.itinerary.legs.length - 1]
-                  .to.name
-              }
+              {itinerary.legs[itinerary.legs.length - 1].to.name}
             </div>
           </div>
         </div>
@@ -457,7 +442,7 @@ class PrintableItinerary extends React.Component {
     );
     return (
       <div className="print-itinerary-container">
-        <PrintableItineraryHeader itinerary={this.props.itinerary} />
+        <PrintableItineraryHeader itinerary={itinerary} />
         <div className="print-itinerary-allLegs">{legs}</div>
       </div>
     );
@@ -479,12 +464,20 @@ export default Relay.createContainer(PrintableItinerary, {
         startTime
         endTime
         fares {
-          type
-          currency
           cents
           components {
+            cents
             fareId
+            routes {
+              agency {
+                fareUrl
+                gtfsId
+                name
+              }
+              gtfsId
+            }
           }
+          type
         }
         legs {
           mode
@@ -501,6 +494,7 @@ export default Relay.createContainer(PrintableItinerary, {
               gtfsId
               code
               platformCode
+              zoneId
             }
           }
           to {
@@ -515,6 +509,7 @@ export default Relay.createContainer(PrintableItinerary, {
               gtfsId
               code
               platformCode
+              zoneId
             }
           }
           legGeometry {
@@ -530,6 +525,7 @@ export default Relay.createContainer(PrintableItinerary, {
               name
               code
               platformCode
+              zoneId
             }
           }
           realTime
@@ -547,6 +543,9 @@ export default Relay.createContainer(PrintableItinerary, {
             gtfsId
             longName
             agency {
+              gtfsId
+              fareUrl
+              name
               phone
             }
           }

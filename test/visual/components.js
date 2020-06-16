@@ -1,5 +1,5 @@
 /* global gemini */
-
+/* eslint-disable no-console */
 /**
  * Customizable test function
  * @componentName the component name to test
@@ -42,6 +42,8 @@ const skip = browsers => suite => {
 };
 
 // tests//
+// testVariation('IndexPage', 'normal', 1, [], actions => actions.wait(5000));
+
 testVariation(
   'Departure',
   'normal',
@@ -69,7 +71,7 @@ testVariation('RailLeg');
 testVariation('FerryLeg');
 testVariation('CarLeg');
 testVariation('ViaLeg');
-testVariation('CallAgencyLeg');
+testVariation('CallAgencyLeg').then(skip('edge17'));
 
 testVariation('Departure', 'added-padding', 2);
 testVariation('Departure', 'with-stop', 3);
@@ -84,16 +86,12 @@ testVariation('RouteDestination', 'normal');
 testVariation('RouteDestination', 'drop-off', 2);
 testVariation('RouteDestination', 'last-stop', 3);
 
-testVariation('Distance', 'zero');
-testVariation('Distance', 'meters', 2);
-testVariation('Distance', 'km', 3);
-
 testVariation('PlatformNumber');
 
 testVariation('CardHeader');
 testVariation('Card');
 testVariation('CityBikeCard');
-testVariation('CityBikeContent');
+// testVariation('CityBikeContent');
 testVariation('CityBikeAvailability');
 testVariation('CityBikeUse');
 
@@ -161,8 +159,10 @@ testVariation('SelectStopRow');
 testVariation('SelectTerminalRow');
 testVariation('SelectCityBikeRow');
 testVariation('SelectParkAndRideRow');
-testVariation('TicketInformation');
+testVariation('TicketInformation').then(skip('edge17'));
+
 testVariation('DateSelect');
+testVariation('RoutePatternSelect');
 testVariation('RouteScheduleHeader');
 testVariation('RouteScheduleStopSelect');
 testVariation('RouteScheduleTripRow');
@@ -177,11 +177,6 @@ testVariation('FrontPagePanelSmall');
 testVariation('ExternalLink');
 testVariation('ExternalLink', 'with-icon-and-text', 2);
 testVariation('LangSelect');
-
-testVariation('ModeFilter', 'grey-buttons');
-testVariation('ModeFilter', 'white-buttons', [
-  '.nearby-routes .component-example:nth-of-type(1) .component',
-]);
 
 testVariation(
   'RouteStop',
@@ -201,19 +196,10 @@ testVariation('BicycleRentalStationRow', 'few-bikes', 2);
 testVariation('BicycleRentalStationRow', 'no-bikes', 3);
 
 testVariation('StopPageHeader');
-testVariation('StopCardHeader');
 testVariation('Timetable');
-testVariation('SplitBars');
-testVariation('Labeled');
-testVariation('Centered');
-testVariation('InfoIcon');
 testVariation('DepartureListHeader');
 testVariation('NextDeparturesListHeader');
-testVariation('SelectedStopPopupContent');
 testVariation('PageFooter');
-
-testVariation('FooterItem', 'basic');
-testVariation('FooterItem', 'with-icon', 2);
 
 testVariation('SummaryRow', 'large', 1);
 testVariation('SummaryRow', 'small', 2);
@@ -238,15 +224,14 @@ testVariation('DateWarning', 'tomorrow-show-warning', 2);
 testVariation('Error404');
 
 testVariation('StopMarkerPopup', 'empty', 1);
-testVariation('StopMarkerPopup', 'basic', 2);
-testVariation('StopMarkerPopup', 'real-time', 3, [
-  'div.departure-list > p:nth-child(1) > span.realtime svg.realtime',
+testVariation('StopMarkerPopup', 'basic', 2, [
   'div.departure-list > p:nth-child(2) > span.realtime svg.realtime',
-  'div.departure-list > p:nth-child(4) > span.realtime svg.realtime',
-]).then(skip('ie11'));
-testVariation('StopMarkerPopup', 'tomorrow', 4);
-testVariation('StopMarkerPopup', 'missing-platform', 5);
+  'p:nth-child(2) > span.route-destination > span > span.last-stop-icon',
+  'p:nth-child(4) > span.route-destination > span > span.last-stop-icon',
+]).then(skip(['ie11', 'edge17']));
 
-testVariation('SelectStreetModeDialog');
-testVariation('SelectMapLayersDialog');
+testVariation('SelectStreetModeDialog').then(skip('ie11'));
+testVariation('SelectMapLayersDialog').then(skip('ie11'));
 testVariation('MainMenuContainer');
+
+testVariation('OriginDestinationBar', 'with-viapoint', 2);

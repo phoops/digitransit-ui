@@ -1,18 +1,21 @@
+/* eslint-disable prefer-template */
+import safeJsonParse from '../util/safeJsonParser';
+
 const CONFIG = process.env.CONFIG || 'default';
 const API_URL = process.env.API_URL || 'https://dev-api.digitransit.fi';
-const GEOCODING_BASE_URL = `${API_URL}/geocoding/v1`;
 const MAP_URL =
   process.env.MAP_URL || 'https://digitransit-dev-cdn-origin.azureedge.net';
 const APP_PATH = process.env.APP_CONTEXT || '';
-const { PIWIK_ADDRESS, PIWIK_ID, SENTRY_DSN } = process.env;
+const { SENTRY_DSN } = process.env;
 const PORT = process.env.PORT || 8080;
 const APP_DESCRIPTION = 'Digitransit journey planning UI';
-const OTP_TIMEOUT = process.env.OTP_TIMEOUT || 10000; // 10k is the current server default
+const OTP_TIMEOUT = process.env.OTP_TIMEOUT || 12000;
 const YEAR = 1900 + new Date().getYear();
+const realtime = require('./realtimeUtils').default;
+
+const REALTIME_PATCH = safeJsonParse(process.env.REALTIME_PATCH) || {};
 
 export default {
-  PIWIK_ADDRESS,
-  PIWIK_ID,
   SENTRY_DSN,
   PORT,
   CONFIG,
@@ -27,13 +30,19 @@ export default {
       sv: `${MAP_URL}/map/v1/hsl-map-sv/`,
     },
     STOP_MAP: `${MAP_URL}/map/v1/finland-stop-map/`,
-    CITYBIKE_MAP: `${MAP_URL}/map/v1/hsl-citybike-map/`,
-    ALERTS: process.env.ALERTS_URL || `${API_URL}/realtime/service-alerts/v1`,
+    CITYBIKE_MAP: `${MAP_URL}/map/v1/finland-citybike-map/`,
     FONT:
       'https://fonts.googleapis.com/css?family=Lato:300,400,900%7CPT+Sans+Narrow:400,700',
-    PELIAS: `${process.env.GEOCODING_BASE_URL || GEOCODING_BASE_URL}/search`,
-    PELIAS_REVERSE_GEOCODER: `${process.env.GEOCODING_BASE_URL ||
-      GEOCODING_BASE_URL}/reverse`,
+    GEOCODING_BASE_URL:
+      process.env.GEOCODING_BASE_URL || `${API_URL}/geocoding/v1`,
+    ROUTE_TIMETABLES: {
+      HSL: `${API_URL}/timetables/v1/hsl/routes/`,
+      tampere: 'http://joukkoliikenne.tampere.fi/media/aikataulut/',
+    },
+    STOP_TIMETABLES: {
+      HSL: `${API_URL}/timetables/v1/hsl/stops/`,
+      tampere: 'https://www.tampere.fi/ekstrat/ptdata/pdf/',
+    },
   },
 
   APP_PATH: `${APP_PATH}`,
@@ -56,21 +65,16 @@ export default {
   searchParams: {},
   feedIds: [],
 
-  realTime: {
-    /* sources per feed Id */
-    HSL: {
-      mqtt: 'wss://mqtt.hsl.fi',
-      routeSelector: function selectRoute(routePageProps) {
-        const route = routePageProps.route.gtfsId.split(':');
-        return route[1];
-      },
-    },
-  },
+  realTime: realtime,
+  realTimePatch: REALTIME_PATCH,
+
+  // Google Tag Manager id
+  GTMid: process.env.GTM_ID || null,
 
   /*
- * by default search endpoints from all but gtfs sources, correct gtfs source
- * figured based on feedIds config variable
- */
+   * by default search endpoints from all but gtfs sources, correct gtfs source
+   * figured based on feedIds config variable
+   */
   searchSources: ['oa', 'osm', 'nlsfi'],
 
   search: {
@@ -96,7 +100,7 @@ export default {
     minTransferTime: 120,
     optimize: 'QUICK',
     preferredRoutes: [],
-    ticketTypes: null,
+    ticketTypes: 'none',
     transferPenalty: 0,
     unpreferredRoutes: [],
     walkBoardCost: 600,
@@ -155,12 +159,16 @@ export default {
   maxWalkDistance: 10000,
   maxBikingDistance: 100000,
   itineraryFiltering: 1.5, // drops 66% worse routes
-  availableLanguages: ['fi', 'sv', 'en', 'fr', 'nb', 'de'],
+  useUnpreferredRoutesPenalty: 1200, // adds 10 minute (weight) penalty to routes that are unpreferred
+  availableLanguages: ['fi', 'sv', 'en', 'fr', 'nb', 'de', 'da', 'es', 'ro'],
   defaultLanguage: 'en',
   // This timezone data will expire on 31.12.2020
   timezoneData:
     'Europe/Helsinki|EET EEST|-20 -30|01010101010101010101010|1BWp0 1qM0 WM0 1qM0 ' +
     'WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00|35e5',
+
+  /* Option to disable the "next" column of the Route panel as it can be confusing sometimes: https://github.com/mfdz/digitransit-ui/issues/167 */
+  displayNextDeparture: true,
 
   mainMenu: {
     // Whether to show the left menu toggle button at all
@@ -181,6 +189,10 @@ export default {
     timeNavigation: {
       enableButtonArrows: false,
     },
+
+    showZoneLimits: false,
+    // Number of days to include to the service time range from the future (DT-3317)
+    serviceTimeRange: 30,
   },
 
   nearestStopDistance: {
@@ -235,6 +247,7 @@ export default {
       showDescription: true,
       showStopCode: true,
       showDistance: true,
+      showZone: false,
     },
   },
 
@@ -246,20 +259,15 @@ export default {
   cityBike: {
     // Config for map features. NOTE: availability for routing is controlled by
     // transportModes.citybike.availableForSelection
-    showCityBikes: true,
     showStationId: true,
-
-    useUrl: {
-      fi: 'https://www.hsl.fi/kaupunkipyorat',
-      sv: 'https://www.hsl.fi/sv/stadscyklar',
-      en: 'https://www.hsl.fi/en/citybikes',
-    },
-
     cityBikeMinZoom: 14,
     cityBikeSmallIconZoom: 14,
     // When should bikeshare availability be rendered in orange rather than green
     fewAvailableCount: 3,
+    networks: {},
+    useSpacesAvailable: true,
   },
+
   // Lowest level for stops and terminals are rendered
   stopsMinZoom: 13,
   // Highest level when stops and terminals are still rendered as small markers
@@ -280,7 +288,7 @@ export default {
     primary: '#00AFFF',
   },
 
-  sprites: 'svg-sprite.default.svg',
+  sprites: 'assets/svg-sprite.default.svg',
 
   disruption: {
     showInfoButton: true,
@@ -314,6 +322,28 @@ export default {
 
   // Ticket information feature toggle
   showTicketInformation: false,
+  ticketInformation: {
+    // This is the name of the primary agency operating in the area.
+    // It is used when a ticket price cannot be shown to the user, indicating
+    // that the primary agency is not responsible for ticketing.
+    /*
+    primaryAgencyName: ...,
+    */
+    // UTM parameters (per agency) that should be appended to the agency's
+    // fareUrl when the fareUrl link is shown in the UI.
+    /*
+    trackingParameters: {
+      "agencyGtfsId": {
+        utm_campaign: ...,
+        utm_content: ...,
+        utm_medium: ...,
+        utm_source: ...,
+      }
+    },
+    */
+  },
+
+  useTicketIcons: false,
   showRouteInformation: false,
 
   modeToOTP: {
@@ -365,7 +395,7 @@ export default {
     },
 
     citybike: {
-      availableForSelection: false, // TODO: Turn off in autumn
+      availableForSelection: true,
       defaultValue: false, // always false
     },
   },
@@ -562,6 +592,10 @@ export default {
     },
   ],
 
+  availableRouteTimetables: {},
+
+  routeTimetableUrlResolver: {},
+
   aboutThisService: {
     fi: [
       {
@@ -632,6 +666,81 @@ export default {
 
   staticMessages: [],
 
+  staticIEMessage: [
+    {
+      id: '3',
+      priority: -1,
+      shouldTrigger: true,
+      content: {
+        fi: [
+          {
+            type: 'text',
+            content:
+              'Palvelu ei tue käyttämääsi selainta. Päivitä selainohjelmasi tai lataa uusi selain oheisista linkeistä.\n',
+          },
+          {
+            type: 'a',
+            content: 'Google Chrome',
+            href: 'https://www.google.com/chrome/',
+          },
+          {
+            type: 'a',
+            content: 'Firefox',
+            href: 'https://www.mozilla.org/fi/firefox/new/',
+          },
+          {
+            type: 'a',
+            content: 'Microsoft Edge',
+            href: 'https://www.microsoft.com/en-us/windows/microsoft-edge',
+          },
+        ],
+        en: [
+          {
+            type: 'text',
+            content:
+              'The service does not support the browser you are using. Update your browser or download a new browser using the links below.\n',
+          },
+          {
+            type: 'a',
+            content: 'Google Chrome',
+            href: 'https://www.google.com/chrome/',
+          },
+          {
+            type: 'a',
+            content: 'Firefox',
+            href: 'https://www.mozilla.org/fi/firefox/new/',
+          },
+          {
+            type: 'a',
+            content: 'Microsoft Edge',
+            href: 'https://www.microsoft.com/en-us/windows/microsoft-edge',
+          },
+        ],
+        sv: [
+          {
+            type: 'text',
+            content:
+              'Tjänsten stöder inte den webbläsare som du har i bruk. Uppdatera din webbläsare eller ladda ner en ny webbläsare via nedanstående länk.\n',
+          },
+          {
+            type: 'a',
+            content: 'Google Chrome',
+            href: 'https://www.google.com/chrome/',
+          },
+          {
+            type: 'a',
+            content: 'Firefox',
+            href: 'https://www.mozilla.org/sv-SE/firefox/new/',
+          },
+          {
+            type: 'a',
+            content: 'Microsoft Edge',
+            href: 'https://www.microsoft.com/en-us/windows/microsoft-edge',
+          },
+        ],
+      },
+    },
+  ],
   themeMap: {
     mint: 'mint',
     hsl: 'reittiopas',
@@ -641,6 +750,7 @@ export default {
     oulu: 'oulu',
     hameenlinna: 'hameenlinna',
     matka: 'matka',
+    salo: 'salo',
     rovaniemi: 'rovaniemi',
     kouvola: 'kouvola',
     tampere: 'tampere',
@@ -651,41 +761,19 @@ export default {
     kuopio: 'kuopio',
   },
 
-  piwikMap: [
-    // in priority order. 1st match stops
-    { id: '10', expr: 'dev-joensuu' },
-    { id: '11', expr: 'joensuu' },
-    { id: '12', expr: 'dev-turku' },
-    { id: '27', expr: '(turku|foli)' },
-    { id: '14', expr: 'hameenlinna' },
-    { id: '15', expr: 'jyvaskyla' },
-    { id: '16', expr: 'kuopio' },
-    { id: '17', expr: 'lahti' },
-    { id: '18', expr: 'lappeenranta' },
-    { id: '21', expr: 'oulu' },
-    { id: '29', expr: 'kotka' },
-    { id: '31', expr: 'mikkeli' },
-    { id: '35', expr: 'tampere' },
-    { id: '43', expr: 'kouvola' },
-    { id: '49', expr: 'rovaniemi' },
-    // put generic expressions last so that they do not match waltti cities
-    // e.g. reittiopas.hameenlinna.fi or turku.digitransit.fi
-    { id: '5', expr: 'dev.reittiopas' },
-    { id: '4', expr: 'reittiopas' },
-    { id: '7', expr: 'dev.matka' },
-    { id: '6', expr: 'matka' },
-    { id: '7', expr: 'dev.digitransit' },
-    { id: '6', expr: 'digitransit' },
-  ],
-
   minutesToDepartureLimit: 9,
 
   imperialEnabled: false,
   // this flag when true enables imperial measurements  'feet/miles system'
 
+  showAllBusses: false,
+  showVehiclesOnStopPage: false,
   mapLayers: {
     featureMapping: {
       ticketSales: {},
     },
   },
+
+  timetables: {},
+  showLogin: false,
 };

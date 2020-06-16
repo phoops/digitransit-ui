@@ -23,7 +23,8 @@ const getLegText = (leg, config) => {
   const showAgency = get(config, 'agency.show', false);
   if (leg.transitLeg && leg.route.shortName) {
     return leg.route.shortName;
-  } else if (showAgency && leg.route.agency) {
+  }
+  if (showAgency && leg.route.agency) {
     return leg.route.agency.name;
   }
   return '';
@@ -48,7 +49,6 @@ class ItineraryLine extends React.Component {
     }
 
     const objs = [];
-
     this.props.legs.forEach((leg, i) => {
       if (leg.mode === 'WAIT') {
         return;
@@ -80,17 +80,19 @@ class ItineraryLine extends React.Component {
           this.props.showIntermediateStops &&
           leg.intermediatePlaces != null
         ) {
-          leg.intermediatePlaces.forEach(place =>
-            objs.push(
-              <StopMarker
-                disableModeIcons
-                stop={place.stop}
-                key={`intermediate-${place.stop.gtfsId}`}
-                mode={modePlusClass}
-                thin
-              />,
-            ),
-          );
+          leg.intermediatePlaces
+            .filter(place => place.stop)
+            .forEach(place =>
+              objs.push(
+                <StopMarker
+                  disableModeIcons
+                  stop={place.stop}
+                  key={`intermediate-${place.stop.gtfsId}`}
+                  mode={modePlusClass}
+                  thin
+                />,
+              ),
+            );
         }
 
         if (leg.from.vertexType === 'BIKESHARE') {
@@ -202,6 +204,7 @@ export default Relay.createContainer(ItineraryLine, {
           vertexType
           bikeRentalStation {
             ${CityBikeMarker.getFragment('station')}
+            stationId
           }
           stop {
             gtfsId

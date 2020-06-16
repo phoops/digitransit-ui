@@ -1,8 +1,9 @@
 import debounce from 'lodash/debounce';
 import d from 'debug';
-import { getJson } from '../util/xhrPromise';
+import { reverseGeocode } from '../util/searchUtils';
 import { getPositioningHasSucceeded } from '../store/localStorage';
 import geolocationMessages from '../util/geolocationMessages';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 const debug = d('PositionActions.js');
 
@@ -11,13 +12,16 @@ let geoWatchId;
 function reverseGeocodeAddress(actionContext, location) {
   const language = actionContext.getStore('PreferencesStore').getLanguage();
 
-  return getJson(actionContext.config.URL.PELIAS_REVERSE_GEOCODER, {
-    'point.lat': location.lat,
-    'point.lon': location.lon,
-    lang: language,
-    size: 1,
-    layers: 'address',
-  }).then(data => {
+  return reverseGeocode(
+    {
+      'point.lat': location.lat,
+      'point.lon': location.lon,
+      lang: language,
+      size: 1,
+      layers: 'address',
+    },
+    actionContext.config,
+  ).then(data => {
     if (data.features != null && data.features.length > 0) {
       const match = data.features[0].properties;
       actionContext.dispatch('AddressFound', {
@@ -142,7 +146,7 @@ function watchPosition(actionContext) {
     }
     actionContext.dispatch('GeolocationNotSupported');
     updateGeolocationMessage(actionContext, 'failed');
-    console.error(error);
+    console.error(error); // eslint-disable-line no-console
   }
 }
 
@@ -164,6 +168,20 @@ export function checkPositioningPermission() {
       navigator.permissions
         .query({ name: 'geolocation' })
         .then(permissionStatus => {
+          if (permissionStatus.state === 'prompt') {
+            // track when user allows geolocation
+            /* eslint-disable no-param-reassign */
+            permissionStatus.onchange = function() {
+              if (this.state === 'granted') {
+                addAnalyticsEvent({
+                  category: 'Map',
+                  action: 'AllowGeolocation',
+                  name: null,
+                });
+                permissionStatus.onchange = null;
+              }
+            };
+          }
           resolve(permissionStatus);
         });
     }

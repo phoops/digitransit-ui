@@ -8,6 +8,7 @@ import groupBy from 'lodash/groupBy';
 import values from 'lodash/values';
 
 import TripRouteStop from './TripRouteStop';
+import { StopAlertsQuery } from '../util/alertQueries';
 import { getDistanceToNearestStop } from '../util/geo-utils';
 import withBreakpoint from '../util/withBreakpoint';
 
@@ -23,6 +24,10 @@ class TripStopListContainer extends React.PureComponent {
     }).isRequired,
     tripStart: PropTypes.string.isRequired,
     breakpoint: PropTypes.string,
+  };
+
+  static defaultProps = {
+    vehicles: {},
   };
 
   static contextTypes = {
@@ -47,6 +52,7 @@ class TripStopListContainer extends React.PureComponent {
       relay.forceFetch();
     }
   }
+
   componentDidUpdate() {
     if (this.props.breakpoint === 'large' && !this.state.hasScrolled) {
       this.scrollToSelectedTailIcon();
@@ -63,54 +69,55 @@ class TripStopListContainer extends React.PureComponent {
       : null;
 
   getStops() {
-    const stops = this.props.trip.stoptimesForDate.map(
-      stoptime => stoptime.stop,
-    );
+    const {
+      breakpoint,
+      currentTime,
+      trip,
+      tripStart,
+      vehicles: propVehicles,
+    } = this.props;
+    const stops = trip.stoptimesForDate.map(stoptime => stoptime.stop);
 
     const nearest = this.getNearestStopDistance(stops);
 
-    const mode = this.props.trip.route.mode.toLowerCase();
+    const mode = trip.route.mode.toLowerCase();
 
     const vehicles = groupBy(
-      values(this.props.vehicles)
-        .filter(
-          vehicle =>
-            this.props.currentTime - vehicle.timestamp * 1000 < 5 * 60 * 1000,
-        )
-        .filter(
-          vehicle =>
-            vehicle.tripStartTime && vehicle.tripStartTime !== 'undefined',
-        ),
-      vehicle => vehicle.direction,
+      values(propVehicles).filter(
+        vehicle => currentTime - vehicle.timestamp * 1000 < 5 * 60 * 1000,
+      ),
+      vehicle => vehicle.next_stop,
     );
 
-    const vehicleStops = groupBy(
-      vehicles[this.props.trip.pattern.directionId],
-      vehicle => `HSL:${vehicle.next_stop}`,
-    );
-
-    const vehiclesWithCorrectStartTime = Object.keys(this.props.vehicles)
-      .map(key => this.props.vehicles[key])
+    const matchingVehicles = Object.keys(propVehicles)
+      .map(key => propVehicles[key])
       .filter(
-        vehicle => vehicle.direction === this.props.trip.pattern.directionId,
+        vehicle =>
+          vehicle.direction === undefined ||
+          vehicle.direction === trip.pattern.directionId,
       )
-      .filter(vehicle => vehicle.tripStartTime === this.props.tripStart);
+      .filter(
+        vehicle =>
+          vehicle.tripStartTime === undefined ||
+          vehicle.tripStartTime === tripStart,
+      )
+      .filter(
+        vehicle =>
+          vehicle.tripId === undefined || vehicle.tripId === trip.gtfsId,
+      );
 
     // selected vehicle
-    const vehicle =
-      vehiclesWithCorrectStartTime.length > 0 &&
-      vehiclesWithCorrectStartTime[0];
-    const nextStop = vehicle && `HSL:${vehicle.next_stop}`;
+    const vehicle = matchingVehicles.length > 0 && matchingVehicles[0];
+    const nextStop = vehicle && vehicle.next_stop;
 
     let stopPassed = true;
 
-    return this.props.trip.stoptimesForDate.map((stoptime, index) => {
+    return trip.stoptimesForDate.map((stoptime, index) => {
       if (nextStop === stoptime.stop.gtfsId) {
         stopPassed = false;
       } else if (
-        stoptime.realtimeDeparture + stoptime.serviceDay >
-          this.props.currentTime &&
-        isEmpty(vehicle)
+        stoptime.realtimeDeparture + stoptime.serviceDay > currentTime.unix() &&
+        (isEmpty(vehicle) || (vehicle && vehicle.next_stop === undefined))
       ) {
         stopPassed = false;
       }
@@ -121,7 +128,8 @@ class TripStopListContainer extends React.PureComponent {
           stoptime={stoptime}
           stop={stoptime.stop}
           mode={mode}
-          vehicles={vehicleStops[stoptime.stop.gtfsId]}
+          color={trip.route && trip.route.color ? `#${trip.route.color}` : null}
+          vehicles={vehicles[stoptime.stop.gtfsId]}
           selectedVehicle={vehicle}
           stopPassed={stopPassed}
           realtime={stoptime.realtime}
@@ -133,13 +141,13 @@ class TripStopListContainer extends React.PureComponent {
               this.context.config.nearestStopDistance.maxShownDistance &&
             nearest.distance
           }
-          currentTime={this.props.currentTime.unix()}
+          currentTime={currentTime.unix()}
           realtimeDeparture={stoptime.realtimeDeparture}
-          pattern={this.props.trip.pattern.code}
-          route={this.props.trip.route.gtfsId}
-          last={index === this.props.trip.stoptimesForDate.length - 1}
+          pattern={trip.pattern.code}
+          route={trip.route.gtfsId}
+          last={index === trip.stoptimesForDate.length - 1}
           first={index === 0}
-          className={`bp-${this.props.breakpoint}`}
+          className={`bp-${breakpoint}`}
         />
       );
     });
@@ -164,7 +172,7 @@ class TripStopListContainer extends React.PureComponent {
   }
 }
 
-export default Relay.createContainer(
+const connectedComponent = Relay.createContainer(
   connectToStores(
     withBreakpoint(TripStopListContainer),
     ['RealTimeInformationStore', 'PositionStore', 'TimeStore'],
@@ -187,13 +195,14 @@ export default Relay.createContainer(
           directionId
         }
         stoptimesForDate {
-          stop{
+          stop {
             gtfsId
             name
             desc
             code
             lat
             lon
+            ${StopAlertsQuery}
           }
           realtimeDeparture
           realtime
@@ -201,8 +210,11 @@ export default Relay.createContainer(
           serviceDay
           realtimeState
         }
+        gtfsId
       }
     `,
     },
   },
 );
+
+export { connectedComponent as default, TripStopListContainer as Component };

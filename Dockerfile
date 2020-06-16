@@ -1,4 +1,4 @@
-FROM node:8
+FROM node:10
 MAINTAINER Reittiopas version: 0.1
 
 EXPOSE 8080
@@ -15,24 +15,20 @@ ENV \
   API_URL='' \
   MAP_URL='' \
   OTP_URL='' \
-  ALERTS_URL='' \
-  VEHICLE_URL='' \
   GEOCODING_BASE_URL='' \
   APP_PATH='' \
   CONFIG='' \
-  PIWIK_ADDRESS='' \
-  PIWIK_ID='' \
   NODE_ENV='' \
   NODE_OPTS='' \
   RELAY_FETCH_TIMEOUT='' \
-  ASSET_URL=''
+  ASSET_URL='' \
+  STATIC_MESSAGE_URL=''
 
 WORKDIR ${WORK}
 ADD . ${WORK}
 
 RUN \
   yarn install --silent && \
-  yarn add --force node-sass && \
   yarn run build && \
   rm -rf static docs test /tmp/* && \
   yarn cache clean

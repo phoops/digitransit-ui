@@ -1,11 +1,11 @@
-/* eslint-disable */
+/* eslint-disable prefer-template */
 import configMerger from '../util/configMerger';
 
 const CONFIG = 'kotka';
 const APP_TITLE = 'Uusi Reittiopas';
 const APP_DESCRIPTION = 'Uusi Reittiopas - kotka';
 
-const walttiConfig = require('./waltti').default;
+const walttiConfig = require('./config.waltti').default;
 
 const minLat = 60.423693;
 const maxLat = 60.688566;
@@ -119,5 +119,16 @@ export default configMerger(walttiConfig, {
         ],
       },
     ],
+  },
+  zoneIdMapping: {
+    1: 'A',
+    2: 'B',
+    3: 'C',
+    4: 'D',
+  },
+  stopCard: {
+    header: {
+      showZone: true,
+    },
   },
 });

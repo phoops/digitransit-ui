@@ -14,6 +14,8 @@ const zopfli = require('node-zopfli-es');
 const WebpackAssetsManifest = require('webpack-assets-manifest');
 const StatsPlugin = require('stats-webpack-plugin');
 
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+
 const {
   languages,
   themeEntries,
@@ -45,13 +47,13 @@ const productionPlugins = [
       '**/*.br',
       'js/*_theme.*.js',
       'js/*_sprite.*.js',
-      'iconstats-*.json',
-      'icons-*/*',
+      'assets/iconstats-*.json',
+      'assets/icons-*/*',
     ],
     caches: {
       main: [':rest:'],
       additional: [],
-      optional: ['*.png', 'css/*.css', '*.svg', ':externals:'],
+      optional: ['*.png', 'css/*.css', 'assets/*.svg', ':externals:'],
     },
     // src for google fonts might change so https://fonts.gstatic.com addresses might require
     // some maintenance in this list to still keep them cached by service worker in the future.
@@ -96,21 +98,20 @@ const productionPlugins = [
       'https://digitransit-prod-cdn-origin.azureedge.net/fonts/684288/F240A1C413BA5E391.css',
       'https://digitransit-prod-cdn-origin.azureedge.net/fonts/684288/FCD8D21C112DA60B9.css',
       'https://digitransit-prod-cdn-origin.azureedge.net/fonts/684288/FD9358ADC87D92390.css',
-      'https://fonts.googleapis.com/css?family=Lato:300,400,900%7CPT+Sans+Narrow:400,700',
-      'https://fonts.gstatic.com/s/lato/v14/S6u9w4BMUTPHh7USSwaPGR_p.woff2',
-      'https://fonts.gstatic.com/s/lato/v14/S6u9w4BMUTPHh7USSwiPGQ.woff2',
-      'https://fonts.gstatic.com/s/lato/v14/S6uyw4BMUTPHjxAwXjeu.woff2',
-      'https://fonts.gstatic.com/s/lato/v14/S6uyw4BMUTPHjx4wXg.woff2',
-      'https://fonts.gstatic.com/s/lato/v14/S6u9w4BMUTPHh50XSwaPGR_p.woff2',
-      'https://fonts.gstatic.com/s/lato/v14/S6u9w4BMUTPHh50XSwiPGQ.woff2',
-      'https://fonts.gstatic.com/s/ptsansnarrow/v8/BngRUXNadjH0qYEzV7ab-oWlsbCLwR26eg.woff2',
-      'https://fonts.gstatic.com/s/ptsansnarrow/v8/BngRUXNadjH0qYEzV7ab-oWlsbCCwR26eg.woff2',
-      'https://fonts.gstatic.com/s/ptsansnarrow/v8/BngRUXNadjH0qYEzV7ab-oWlsbCIwR26eg.woff2',
-      'https://fonts.gstatic.com/s/ptsansnarrow/v8/BngRUXNadjH0qYEzV7ab-oWlsbCGwR0.woff2',
-      'https://fonts.gstatic.com/s/ptsansnarrow/v8/BngSUXNadjH0qYEzV7ab-oWlsbg95AiIW_3QRQ.woff2',
-      'https://fonts.gstatic.com/s/ptsansnarrow/v8/BngSUXNadjH0qYEzV7ab-oWlsbg95AiBW_3QRQ.woff2',
-      'https://fonts.gstatic.com/s/ptsansnarrow/v8/BngSUXNadjH0qYEzV7ab-oWlsbg95AiLW_3QRQ.woff2',
-      'https://fonts.gstatic.com/s/ptsansnarrow/v8/BngSUXNadjH0qYEzV7ab-oWlsbg95AiFW_0.woff2',
+      'https://fonts.gstatic.com/s/lato/v16/S6u9w4BMUTPHh7USSwaPGR_p.woff2',
+      'https://fonts.gstatic.com/s/lato/v16/S6u9w4BMUTPHh7USSwiPGQ.woff2',
+      'https://fonts.gstatic.com/s/lato/v16/S6uyw4BMUTPHjxAwXjeu.woff2',
+      'https://fonts.gstatic.com/s/lato/v16/S6uyw4BMUTPHjx4wXg.woff2',
+      'https://fonts.gstatic.com/s/lato/v16/S6u9w4BMUTPHh50XSwaPGR_p.woff2',
+      'https://fonts.gstatic.com/s/lato/v16/S6u9w4BMUTPHh50XSwiPGQ.woff2',
+      'https://fonts.gstatic.com/s/ptsansnarrow/v11/BngRUXNadjH0qYEzV7ab-oWlsbCLwR26eg.woff2',
+      'https://fonts.gstatic.com/s/ptsansnarrow/v11/BngRUXNadjH0qYEzV7ab-oWlsbCCwR26eg.woff2',
+      'https://fonts.gstatic.com/s/ptsansnarrow/v11/BngRUXNadjH0qYEzV7ab-oWlsbCIwR26eg.woff2',
+      'https://fonts.gstatic.com/s/ptsansnarrow/v11/BngRUXNadjH0qYEzV7ab-oWlsbCGwR0.woff2',
+      'https://fonts.gstatic.com/s/ptsansnarrow/v11/BngSUXNadjH0qYEzV7ab-oWlsbg95AiIW_3QRQ.woff2',
+      'https://fonts.gstatic.com/s/ptsansnarrow/v11/BngSUXNadjH0qYEzV7ab-oWlsbg95AiBW_3QRQ.woff2',
+      'https://fonts.gstatic.com/s/ptsansnarrow/v11/BngSUXNadjH0qYEzV7ab-oWlsbg95AiLW_3QRQ.woff2',
+      'https://fonts.gstatic.com/s/ptsansnarrow/v11/BngSUXNadjH0qYEzV7ab-oWlsbg95AiFW_0.woff2',
     ],
     updateStrategy: 'changed',
     autoUpdate: 1000 * 60 * 5,
@@ -137,6 +138,15 @@ const productionPlugins = [
     minRatio: 0.95,
     algorithm: iltorb.compress,
   }),
+  new CopyWebpackPlugin([
+    {
+      from: path.join(__dirname, 'static/assets/geojson'),
+      transform: function minify(content) {
+        return JSON.stringify(JSON.parse(content.toString()));
+      },
+      to: path.join(__dirname, '_static/assets/geojson'),
+    },
+  ]),
   new StatsPlugin('../stats.json', { chunkModules: true }),
   new WebpackAssetsManifest({ output: '../manifest.json' }),
 ];
@@ -212,7 +222,7 @@ module.exports = {
       {
         test: /\.(eot|png|ttf|woff|svg|jpeg|jpg)$/,
         loader: isDevelopment ? 'file-loader' : 'url-loader',
-        options: { limit: 10000 },
+        options: { limit: 10000, outputPath: 'assets' },
       },
     ],
   },

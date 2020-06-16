@@ -6,12 +6,12 @@ import { routerShape } from 'react-router';
 import ComponentUsageExample from './ComponentUsageExample';
 import Icon from './Icon';
 import LazilyLoad, { importLazy } from './LazilyLoad';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 class MainMenuContainer extends Component {
   static contextTypes = {
     executeAction: PropTypes.func.isRequired,
     location: PropTypes.object.isRequired,
-    piwik: PropTypes.object,
     router: routerShape.isRequired,
     intl: intlShape.isRequired,
     config: PropTypes.object.isRequired,
@@ -20,10 +20,16 @@ class MainMenuContainer extends Component {
   static propTypes = {
     homeUrl: PropTypes.string.isRequired,
     isOpen: PropTypes.bool,
+    user: PropTypes.object,
   };
 
   static defaultProps = {
     isOpen: false,
+  };
+
+  mainMenuModules = {
+    Drawer: () => importLazy(import('material-ui/Drawer')),
+    MainMenu: () => importLazy(import('./MainMenu')),
   };
 
   onRequestChange = newState => this.internalSetOffcanvas(newState);
@@ -42,13 +48,11 @@ class MainMenuContainer extends Component {
   toggleOffcanvas = () => this.internalSetOffcanvas(!this.getOffcanvasState());
 
   internalSetOffcanvas = newState => {
-    if (this.context.piwik != null) {
-      this.context.piwik.trackEvent(
-        'ItinerarySettings',
-        'ExtraSettingsPanelClick',
-        newState ? 'ExtraSettingsPanelOpen' : 'ExtraSettingsPanelClose',
-      );
-    }
+    addAnalyticsEvent({
+      category: 'Navigation',
+      action: newState ? 'OpenMobileMenu' : 'CloseMobileMenu',
+      name: null,
+    });
 
     if (newState) {
       this.context.router.push({
@@ -61,11 +65,6 @@ class MainMenuContainer extends Component {
     } else {
       this.context.router.goBack();
     }
-  };
-
-  mainMenuModules = {
-    Drawer: () => importLazy(import('material-ui/Drawer')),
-    MainMenu: () => importLazy(import('./MainMenu')),
   };
 
   render = () => {
@@ -89,6 +88,7 @@ class MainMenuContainer extends Component {
                 showDisruptionInfo={isOpen && !isForcedOpen}
                 visible={isOpen}
                 homeUrl={this.props.homeUrl}
+                user={this.props.user}
               />
             </Drawer>
           )}

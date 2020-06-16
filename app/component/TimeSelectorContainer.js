@@ -11,6 +11,7 @@ import connectToStores from 'fluxible-addons-react/connectToStores';
 
 import TimeSelectors from './TimeSelectors';
 import { replaceQueryParams } from '../util/queryUtils';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 class TimeSelectorContainer extends Component {
   static contextTypes = {
@@ -44,21 +45,25 @@ class TimeSelectorContainer extends Component {
     let value = `${day.unix()}`;
     do {
       let label;
+      let ariaLabel;
       if (day.isSame(now, 'day')) {
         label = this.context.intl.formatMessage({
           id: 'today',
           defaultMessage: 'Today',
         });
+        ariaLabel = label;
       } else if (day.isSame(tomorrow, 'day')) {
         label = this.context.intl.formatMessage({
           id: 'tomorrow',
           defaultMessage: 'Tomorrow',
         });
+        ariaLabel = label;
       } else {
-        label = day.format('dd D.M');
+        ariaLabel = day.format('dddd Do MMMM ');
+        label = day.format('dd D.M.');
       }
       dates.push(
-        <option value={value} key={value}>
+        <option aria-label={ariaLabel} value={value} key={value}>
           {label}
         </option>,
       );
@@ -74,6 +79,11 @@ class TimeSelectorContainer extends Component {
   }, 10);
 
   changeTime = ({ hours, minutes, add }) => {
+    addAnalyticsEvent({
+      action: 'EditJourneyTime',
+      category: 'ItinerarySettings',
+      name: null,
+    });
     const time = this.props.time.clone();
     if (add) {
       // delta from arrow keys
@@ -86,6 +96,11 @@ class TimeSelectorContainer extends Component {
   };
 
   changeDate = ({ target }) => {
+    addAnalyticsEvent({
+      action: 'EditJourneyDate',
+      category: 'ItinerarySettings',
+      name: null,
+    });
     const time = moment.unix(parseInt(target.value, 10));
     this.setTime(time);
   };
@@ -114,6 +129,8 @@ const withNow = connectToStores(TSCWithProps, ['TimeStore'], context => ({
   now: context.getStore('TimeStore').getCurrentTime(),
 }));
 
-export default getContext({
+const connectedContainer = getContext({
   location: locationShape.isRequired,
 })(withNow);
+
+export { connectedContainer as default, TimeSelectorContainer as Component };

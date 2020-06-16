@@ -1,5 +1,4 @@
 import cx from 'classnames';
-import filter from 'lodash/filter';
 import moment from 'moment';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -10,6 +9,7 @@ import LocalTime from './LocalTime';
 import RelativeDuration from './RelativeDuration';
 import RouteNumber from './RouteNumber';
 import RouteNumberContainer from './RouteNumberContainer';
+import { getActiveLegAlertSeverityLevel } from '../util/alertUtils';
 import { displayDistance } from '../util/geo-utils';
 import {
   containsBiking,
@@ -22,6 +22,10 @@ import {
 import { sameDay, dateOrEmpty } from '../util/timeUtils';
 import withBreakpoint from '../util/withBreakpoint';
 import { isKeyboardSelectionEvent } from '../util/browser';
+import {
+  getCityBikeNetworkIcon,
+  getCityBikeNetworkConfig,
+} from '../util/citybikes';
 
 import ComponentUsageExample from './ComponentUsageExample';
 import {
@@ -30,20 +34,8 @@ import {
   exampleDataCallAgency,
   examplePropsCityBike,
   exampleDataVia,
+  exampleDataCanceled,
 } from './data/SummaryRow.ExampleData';
-
-/*
-const dummyalerts = [{
-  effectiveStartDate: new Date().getTime() - 9000000,
-  effectiveEndDate: new Date().getTime() + 9000000,
-}];
-*/
-
-const hasActiveDisruption = (t1, t2, alerts) =>
-  filter(
-    alerts,
-    alert => !(alert.effectiveStartDate > t2 || alert.effectiveEndDate < t1),
-  ).length > 0;
 
 const Leg = ({ routeNumber, leg, large }) => (
   <div className="leg">
@@ -63,9 +55,7 @@ Leg.propTypes = {
 };
 
 export const RouteLeg = ({ leg, large, intl }) => {
-  const getTripAlerts = trip => (trip && trip.alerts) || [];
   const isCallAgency = isCallAgencyPickupType(leg);
-
   let routeNumber;
   if (isCallAgency) {
     const message = intl.formatMessage({
@@ -84,16 +74,11 @@ export const RouteLeg = ({ leg, large, intl }) => {
   } else {
     routeNumber = (
       <RouteNumberContainer
+        alertSeverityLevel={getActiveLegAlertSeverityLevel(leg)}
         route={leg.route}
         className={cx('line', leg.mode.toLowerCase())}
         vertical
         withBar
-        hasDisruption={hasActiveDisruption(
-          leg.startTime / 1000,
-          leg.endTime / 1000,
-          getTripAlerts(leg.trip),
-          // dummyalerts,
-        )}
       />
     );
   }
@@ -108,6 +93,12 @@ RouteLeg.propTypes = {
 };
 
 export const ModeLeg = ({ leg, mode, large }, { config }) => {
+  const networkIcon =
+    leg.from.bikeRentalStation &&
+    getCityBikeNetworkIcon(
+      getCityBikeNetworkConfig(leg.from.bikeRentalStation.networks[0], config),
+    );
+
   const routeNumber = (
     <RouteNumber
       mode={mode}
@@ -115,6 +106,7 @@ export const ModeLeg = ({ leg, mode, large }, { config }) => {
       className={cx('line', mode.toLowerCase())}
       vertical
       withBar
+      icon={networkIcon}
       {...getLegBadgeProps(leg, config)}
     />
   );
@@ -142,7 +134,7 @@ CityBikeLeg.propTypes = {
 
 export const ViaLeg = () => (
   <div className="leg via">
-    <Icon img="icon-icon_place" className="itinerary-icon place" />
+    <Icon img="icon-icon_mapMarker-via" className="itinerary-icon place" />
   </div>
 );
 
@@ -222,7 +214,7 @@ const isViaPointConnectingLeg = (leg, nextLeg, intermediatePlaces) => {
 };
 
 const SummaryRow = (
-  { data, breakpoint, intermediatePlaces, ...props },
+  { data, breakpoint, intermediatePlaces, zones, ...props },
   { intl, intl: { formatMessage }, config },
 ) => {
   const isTransitLeg = leg => leg.transitLeg || leg.rentedBike;
@@ -242,6 +234,9 @@ const SummaryRow = (
 
   let lastLegRented = false;
   let firstLegStartTime = null;
+  let firstLegStartTimeText = null;
+  const vehicleNames = [];
+  const stopNames = [];
 
   data.legs.forEach((leg, i) => {
     if (leg.rentedBike && lastLegRented) {
@@ -310,6 +305,18 @@ const SummaryRow = (
           large={breakpoint === 'large'}
         />,
       );
+      vehicleNames.push(
+        formatMessage(
+          {
+            id: `${leg.mode.toLowerCase()}-with-route-number`,
+          },
+          {
+            routeNumber: leg.route.shortName,
+            headSign: '',
+          },
+        ),
+      );
+      stopNames.push(leg.from.name);
       return;
     }
 
@@ -356,6 +363,7 @@ const SummaryRow = (
           <LocalTime time={firstDeparture} />
         </div>
       );
+      firstLegStartTimeText = <LocalTime time={firstDeparture} />;
     }
   }
 
@@ -366,13 +374,9 @@ const SummaryRow = (
       passive: props.passive,
       'bp-large': breakpoint === 'large',
       open: props.open || props.children,
+      'cancelled-itinerary': props.isCancelled,
     },
   ]);
-
-  const itineraryLabel = formatMessage({
-    id: 'itinerary-page.title',
-    defaultMessage: 'Itinerary',
-  });
 
   const isDefaultPosition = breakpoint !== 'large' && !onlyBiking(data);
   const renderBikingDistance = itinerary =>
@@ -383,102 +387,235 @@ const SummaryRow = (
       </div>
     );
 
-  /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
-  return (
-    <div className={classes} onClick={() => props.onSelect(props.hash)}>
-      {props.open || props.children
-        ? [
-            <div className="flex-grow itinerary-heading" key="title">
-              <FormattedMessage
-                id="itinerary-page.title"
-                defaultMessage="Itinerary"
-                tagName="h2"
-              />
-            </div>,
-            <div
-              tabIndex="0"
-              role="button"
-              title={itineraryLabel}
-              key="arrow"
-              className="action-arrow-click-area noborder flex-vertical"
-              onClick={e => {
-                e.stopPropagation();
-                props.onSelectImmediately(props.hash);
-              }}
-              onKeyPress={e =>
-                isKeyboardSelectionEvent(e) &&
-                props.onSelectImmediately(props.hash)
+  const showDetails = props.open || props.children;
+
+  //  accessible representation for summary
+  const textSummary = showDetails ? null : (
+    <div className="sr-only" key="screenReader">
+      <FormattedMessage
+        id="itinerary-summary-row.description"
+        values={{
+          departureDate: dateOrEmpty(startTime, refTime),
+          departureTime: <LocalTime time={startTime} />,
+          arrivalDate: dateOrEmpty(endTime, refTime),
+          arrivalTime: <LocalTime time={endTime} />,
+          firstDeparture:
+            vehicleNames.length === 0 ? null : (
+              <>
+                <FormattedMessage
+                  id="itinerary-summary-row.first-departure"
+                  values={{
+                    vehicle: vehicleNames[0],
+                    departureTime: firstLegStartTimeText,
+                    stopName: stopNames[0],
+                  }}
+                />
+              </>
+            ),
+          transfers: vehicleNames.map((name, index) => {
+            if (index === 0) {
+              return null;
+            }
+            return formatMessage(
+              { id: 'itinerary-summary-row.transfers' },
+              {
+                vehicle: name,
+                stopName: stopNames[index],
+              },
+            );
+          }),
+          totalTime: <RelativeDuration duration={duration} />,
+          distance: (
+            <FormattedMessage
+              id={
+                containsBiking(data)
+                  ? 'itinerary-summary-row.biking-distance'
+                  : 'itinerary-summary-row.walking-distance'
               }
-            >
-              <div className="action-arrow flex-grow">
-                <Icon img="icon-icon_arrow-collapse--right" />
-              </div>
-            </div>,
-            props.children &&
-              React.cloneElement(React.Children.only(props.children), {
-                searchTime: props.refTime,
-              }),
-          ]
-        : [
-            <div className="itinerary-start-time" key="startTime">
-              <span
-                className={cx('itinerary-start-date', {
-                  nobg: sameDay(startTime, refTime),
-                })}
-              >
-                <span>{dateOrEmpty(startTime, refTime)}</span>
-              </span>
-              <LocalTime time={startTime} />
-            </div>,
-            <div className="itinerary-legs" key="legs">
-              {firstLegStartTime}
-              {legs}
-            </div>,
-            <div
-              className="itinerary-end-time-and-distance"
-              key="endtime-distance"
-            >
-              <div className="itinerary-end-time">
-                <LocalTime time={endTime} />
-              </div>
-              {isDefaultPosition && renderBikingDistance(data)}
-            </div>,
-            <div
-              className="itinerary-duration-and-distance"
-              key="duration-distance"
-            >
-              <span className="itinerary-duration">
-                <RelativeDuration duration={duration} />
-              </span>
-              {!isDefaultPosition && renderBikingDistance(data)}
-              {!onlyBiking(data) && (
-                <div className="itinerary-walking-distance">
-                  <Icon img="icon-icon_walk" viewBox="6 0 40 40" />
-                  {displayDistance(getTotalWalkingDistance(data), config)}
-                </div>
-              )}
-            </div>,
-            <div
-              tabIndex="0"
-              role="button"
-              title={itineraryLabel}
-              key="arrow"
-              className="action-arrow-click-area flex-vertical noborder"
-              onClick={e => {
-                e.stopPropagation();
-                props.onSelectImmediately(props.hash);
+              values={{
+                totalDistance: displayDistance(
+                  containsBiking(data)
+                    ? getTotalBikingDistance(data)
+                    : getTotalWalkingDistance(data),
+                  config,
+                ),
               }}
-              onKeyPress={e =>
-                isKeyboardSelectionEvent(e) &&
-                props.onSelectImmediately(props.hash)
-              }
-            >
-              <div className="action-arrow flex-grow">
-                <Icon img="icon-icon_arrow-collapse--right" />
-              </div>
-            </div>,
-          ]}
+            />
+          ),
+        }}
+      />
     </div>
+  );
+
+  return (
+    <span role="listitem" className={classes} aria-atomic="true">
+      <h3 className="sr-only">
+        <FormattedMessage
+          id="summary-page.row-label"
+          values={{
+            number: props.hash + 1,
+          }}
+        />
+      </h3>
+      {textSummary}
+      <div
+        className="itinerary-summary-visible"
+        style={{
+          display: props.isCancelled && !props.showCancelled ? 'none' : 'flex',
+        }}
+      >
+        {/* This next clickable region does not have proper accessible role, tabindex and keyboard handler
+            because screen reader works weirdly with nested buttons. Same functonality works from the inner button */
+        /* eslint-disable jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
+        {showDetails ? (
+          <>
+            <div className="itinerary-summary-header">
+              <div
+                className="summary-clickable-area"
+                onClick={() => props.onSelect(props.hash)}
+                aria-hidden="true"
+              >
+                {/* eslint-enable jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
+                <div className="flex-grow itinerary-heading" key="title">
+                  <h4 className="h2">
+                    <FormattedMessage
+                      id="itinerary-page.title"
+                      defaultMessage="Itinerary"
+                    />
+                  </h4>
+                </div>
+              </div>
+              <div
+                tabIndex="0"
+                role="button"
+                title={formatMessage({
+                  id: 'itinerary-page.hide-details',
+                })}
+                key="arrow"
+                className="action-arrow-click-area noborder flex-vertical"
+                onClick={e => {
+                  e.stopPropagation();
+                  props.onSelectImmediately(props.hash);
+                }}
+                onKeyPress={e =>
+                  isKeyboardSelectionEvent(e) &&
+                  props.onSelectImmediately(props.hash)
+                }
+              >
+                <div className="action-arrow flex-grow">
+                  <Icon img="icon-icon_arrow-collapse--right" />
+                </div>
+              </div>
+            </div>
+            {/* eslint-disable jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
+            <span
+              className="itinerary-details-container visible"
+              aria-expanded="true"
+              onClick={() => props.onSelect(props.hash)}
+            >
+              {/* eslint-enable jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
+              <h4 className="sr-only">
+                <FormattedMessage
+                  id="itinerary-page.title"
+                  defaultMessage="Itinerary"
+                />
+              </h4>
+              {props.children &&
+                React.cloneElement(React.Children.only(props.children), {
+                  searchTime: props.refTime,
+                })}
+            </span>
+          </>
+        ) : (
+          <>
+            <div className="itinerary-summary-header">
+              <div
+                className="summary-clickable-area"
+                onClick={() => props.onSelect(props.hash)}
+                onKeyPress={e =>
+                  isKeyboardSelectionEvent(e) && props.onSelect(props.hash)
+                }
+                tabIndex="0"
+                role="button"
+              >
+                <span key="ShowOnMapScreenReader" className="sr-only">
+                  <FormattedMessage id="itinerary-summary-row.clickable-area-description" />
+                </span>
+                <div
+                  className="itinerary-start-time"
+                  key="startTime"
+                  aria-hidden="true"
+                >
+                  <span
+                    className={cx('itinerary-start-date', {
+                      nobg: sameDay(startTime, refTime),
+                    })}
+                  >
+                    <span>{dateOrEmpty(startTime, refTime)}</span>
+                  </span>
+                  <LocalTime time={startTime} />
+                </div>
+                <div className="itinerary-legs" key="legs" aria-hidden="true">
+                  {firstLegStartTime}
+                  {legs}
+                </div>
+                <div
+                  className="itinerary-end-time-and-distance"
+                  key="endtime-distance"
+                  aria-hidden="true"
+                >
+                  <div className="itinerary-end-time">
+                    <LocalTime time={endTime} />
+                  </div>
+                  {isDefaultPosition && renderBikingDistance(data)}
+                </div>
+                <div
+                  className="itinerary-duration-and-distance"
+                  key="duration-distance"
+                  aria-hidden="true"
+                >
+                  <span className="itinerary-duration">
+                    <RelativeDuration duration={duration} />
+                  </span>
+                  {!isDefaultPosition && renderBikingDistance(data)}
+                  {!onlyBiking(data) && (
+                    <div className="itinerary-walking-distance">
+                      <Icon img="icon-icon_walk" viewBox="6 0 40 40" />
+                      {displayDistance(getTotalWalkingDistance(data), config)}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div
+                tabIndex="0"
+                role="button"
+                title={formatMessage({
+                  id: 'itinerary-page.show-details',
+                })}
+                key="arrow"
+                className="action-arrow-click-area flex-vertical noborder"
+                onClick={e => {
+                  e.stopPropagation();
+                  props.onSelectImmediately(props.hash);
+                }}
+                onKeyPress={e =>
+                  isKeyboardSelectionEvent(e) &&
+                  props.onSelectImmediately(props.hash)
+                }
+              >
+                <div className="action-arrow flex-grow">
+                  <Icon img="icon-icon_arrow-collapse--right" />
+                </div>
+              </div>
+            </div>
+            <span
+              className="itinerary-details-container"
+              aria-expanded="false"
+            />
+          </>
+        )}
+      </div>
+    </span>
   );
 };
 
@@ -493,6 +630,13 @@ SummaryRow.propTypes = {
   open: PropTypes.bool,
   breakpoint: PropTypes.string.isRequired,
   intermediatePlaces: PropTypes.array,
+  isCancelled: PropTypes.bool,
+  showCancelled: PropTypes.bool,
+  zones: PropTypes.arrayOf(PropTypes.string),
+};
+
+SummaryRow.defaultProps = {
+  zones: [],
 };
 
 SummaryRow.contextTypes = {
@@ -599,6 +743,18 @@ SummaryRow.description = () => {
         />
         {/* citybike-large-passive */}
         <SummaryRow {...examplePropsCityBike('large')} />
+        {/* canceled-large-itinerary */}
+        <SummaryRow
+          refTime={today}
+          breakpoint="large"
+          data={exampleDataCanceled}
+          passive
+          onSelect={nop}
+          onSelectImmediately={nop}
+          hash={1}
+          isCancelled
+          showCancelled
+        />
       </ComponentUsageExample>
       <ComponentUsageExample description="small">
         {/* passive-small-today */}
@@ -671,6 +827,18 @@ SummaryRow.description = () => {
         />
         {/* citybike-small-passive */}
         <SummaryRow {...examplePropsCityBike('small')} />
+        {/* canceled-large-itinerary */}
+        <SummaryRow
+          refTime={today}
+          breakpoint="small"
+          data={exampleDataCanceled}
+          passive
+          onSelect={nop}
+          onSelectImmediately={nop}
+          hash={1}
+          isCancelled
+          showCancelled
+        />
       </ComponentUsageExample>
     </div>
   );

@@ -9,14 +9,10 @@ import isNumber from 'lodash/isNumber';
 import Icon from './Icon';
 import BackButton from './BackButton';
 import FavouriteIconTable from './FavouriteIconTable';
-import {
-  addFavouriteLocation,
-  addFavouriteStop,
-  deleteFavouriteLocation,
-  deleteFavouriteStop,
-} from '../action/FavouriteActions';
+import { addFavourite, deleteFavourite } from '../action/FavouriteActions';
 import { isStop, isTerminal } from '../util/suggestionUtils';
 import DTEndpointAutosuggest from './DTEndpointAutosuggest';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 class AddFavouriteContainer extends React.Component {
   static FavouriteIconIds = [
@@ -48,12 +44,13 @@ class AddFavouriteContainer extends React.Component {
     favourite: PropTypes.shape({
       address: PropTypes.string,
       gtfsId: PropTypes.string,
-      id: PropTypes.number,
+      gid: PropTypes.string,
       lat: PropTypes.number,
-      locationName: PropTypes.string,
+      name: PropTypes.string,
       lon: PropTypes.number,
       selectedIconId: PropTypes.string,
       version: PropTypes.number,
+      favouriteId: PropTypes.string,
     }),
   };
 
@@ -61,10 +58,9 @@ class AddFavouriteContainer extends React.Component {
     favourite: {
       address: undefined,
       lat: undefined,
-      locationName: '',
+      name: '',
       lon: undefined,
       selectedIconId: undefined,
-      version: 1,
     },
   };
 
@@ -73,73 +69,59 @@ class AddFavouriteContainer extends React.Component {
   };
 
   setLocationProperties = location => {
-    this.setState({
+    this.setState(prevState => ({
       favourite: {
-        ...this.state.favourite,
-        id: this.state.favourite.id,
-        gtfsId: location.id,
+        ...prevState.favourite,
+        favouriteId: prevState.favourite.favouriteId,
+        gid: location.id,
+        gtfsId: location.gtfsId,
         code: location.code,
         layer: location.layer,
         lat: location.lat,
         lon: location.lon,
         address: location.address,
       },
-    });
+    }));
   };
 
   isEdit = () =>
-    this.props.favourite !== undefined && this.props.favourite.id !== undefined;
+    this.props.favourite !== undefined &&
+    this.props.favourite.favouriteId !== undefined;
 
   canSave = () =>
     !isEmpty(this.state.favourite.selectedIconId) &&
     isNumber(this.state.favourite.lat) &&
     isNumber(this.state.favourite.lon) &&
-    !isEmpty(this.state.favourite.locationName);
+    !isEmpty(this.state.favourite.name);
 
   save = () => {
     if (this.canSave()) {
-      // Old favourite needs to be removed if location type changes
-      if (
-        this.props.favourite &&
-        this.props.favourite.gtfsId &&
-        !this.state.favourite.gtfsId
-      ) {
-        this.context.executeAction(deleteFavouriteStop, {
-          id: this.state.favourite.id,
-        });
-        delete this.state.favourite.id;
-      } else if (
-        this.props.favourite &&
-        !this.props.favourite.gtfsId &&
-        this.state.favourite.gtfsId
-      ) {
-        this.context.executeAction(deleteFavouriteLocation, {
-          id: this.state.favourite.id,
-        });
-        delete this.state.favourite.id;
-      }
-
       if (
         (isStop(this.state.favourite) || isTerminal(this.state.favourite)) &&
         this.state.favourite.gtfsId
       ) {
-        this.context.executeAction(addFavouriteStop, this.state.favourite);
+        const favourite = isTerminal(this.state.favourite)
+          ? { ...this.state.favourite, type: 'station' }
+          : { ...this.state.favourite, type: 'stop' };
+
+        this.context.executeAction(addFavourite, favourite);
       } else {
-        this.context.executeAction(addFavouriteLocation, this.state.favourite);
+        this.context.executeAction(addFavourite, {
+          ...this.state.favourite,
+          type: 'place',
+        });
       }
+      addAnalyticsEvent({
+        category: 'Favourite',
+        action: 'SaveFavourite',
+        name: this.state.favourite.selectedIconId,
+      });
       this.quit();
     }
   };
 
   delete = () => {
-    if (
-      (isStop(this.state.favourite) || isTerminal(this.state.favourite)) &&
-      this.state.favourite.gtfsId
-    ) {
-      this.context.executeAction(deleteFavouriteStop, this.state.favourite);
-    } else {
-      this.context.executeAction(deleteFavouriteLocation, this.state.favourite);
-    }
+    this.context.executeAction(deleteFavourite, this.state.favourite);
     this.quit();
   };
 
@@ -148,30 +130,31 @@ class AddFavouriteContainer extends React.Component {
   };
 
   specifyName = event => {
-    this.setState({
-      favourite: { ...this.state.favourite, locationName: event.target.value },
-    });
+    const name = event.target.value;
+    this.setState(prevState => ({
+      favourite: { ...prevState.favourite, name },
+    }));
   };
 
   selectIcon = id => {
-    const favourite = { ...this.state.favourite, selectedIconId: id };
-    // If the user hasn't set a location name yet,
-    // let's attempt to autodetermine it based on the icon they chose.
-    if (isEmpty(this.state.favourite.locationName)) {
-      let suggestedName = AddFavouriteContainer.FavouriteIconIdToNameMap[id];
-      if (suggestedName) {
-        // If there is a suggested name in the map,
-        // attempt to translate it, then assign it to
-        // the update favourite object.
-        suggestedName = this.context.intl.formatMessage({
-          id: `location-${suggestedName}`,
-          defaultMessage: suggestedName,
-        });
-        favourite.locationName = suggestedName;
+    this.setState(prevState => {
+      const favourite = { ...prevState.favourite, selectedIconId: id };
+      // If the user hasn't set a location name yet,
+      // let's attempt to autodetermine it based on the icon they chose.
+      if (isEmpty(favourite.name)) {
+        let suggestedName = AddFavouriteContainer.FavouriteIconIdToNameMap[id];
+        if (suggestedName) {
+          // If there is a suggested name in the map,
+          // attempt to translate it, then assign it to
+          // the update favourite object.
+          suggestedName = this.context.intl.formatMessage({
+            id: `location-${suggestedName}`,
+            defaultMessage: suggestedName,
+          });
+          favourite.name = suggestedName;
+        }
       }
-    }
-    this.setState({
-      favourite,
+      return { favourite };
     });
   };
 
@@ -246,7 +229,7 @@ class AddFavouriteContainer extends React.Component {
               <div className="add-favourite-container__input-placeholder">
                 <input
                   className="add-favourite-container__input"
-                  value={favourite.locationName}
+                  value={favourite.name}
                   placeholder={this.context.intl.formatMessage({
                     id: 'location-examples',
                     defaultMessage: 'e.g. Home, Work, School,...',
@@ -307,16 +290,15 @@ class AddFavouriteContainer extends React.Component {
 
 const AddFavouriteContainerWithFavourite = connectToStores(
   AddFavouriteContainer,
-  ['FavouriteLocationStore', 'FavouriteStopsStore'],
+  ['FavouriteStore'],
   (context, props) => ({
-    favourite: props.location.pathname.includes('pysakki')
-      ? context
-          .getStore('FavouriteStopsStore')
-          .getById(parseInt(props.params.id, 10))
-      : context
-          .getStore('FavouriteLocationStore')
-          .getById(parseInt(props.params.id, 10)),
+    favourite: context
+      .getStore('FavouriteStore')
+      .getByFavouriteId(props.params.id),
   }),
 );
 
-export default AddFavouriteContainerWithFavourite;
+export {
+  AddFavouriteContainerWithFavourite as default,
+  AddFavouriteContainer as Component,
+};

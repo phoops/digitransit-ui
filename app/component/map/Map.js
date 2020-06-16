@@ -59,7 +59,6 @@ export default class Map extends React.Component {
 
   static contextTypes = {
     executeAction: PropTypes.func.isRequired,
-    piwik: PropTypes.object,
     config: PropTypes.object.isRequired,
   };
 
@@ -140,6 +139,7 @@ export default class Map extends React.Component {
           boundsOptions={boundsOptions}
           {...this.props.leafletEvents}
           onPopupopen={this.onPopupopen}
+          closePopupOnClick={false}
         >
           <TileLayer
             onLoad={this.setLoaded}

@@ -1,35 +1,43 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { routerShape } from 'react-router';
 import DTSearchAutosuggest from './DTSearchAutosuggest';
 import { saveSearch } from '../action/SearchActions';
 import { dtLocationShape } from '../util/shapes';
+import { searchPlace } from '../util/searchUtils';
 
 class DTOldSearchSavingAutosuggest extends React.Component {
   static contextTypes = {
     executeAction: PropTypes.func.isRequired,
-    getStore: PropTypes.func.isRequired,
     config: PropTypes.object.isRequired,
-    router: routerShape.isRequired,
   };
 
   static propTypes = {
-    onSelect: PropTypes.func.isRequired,
-    searchType: PropTypes.string.isRequired,
     autoFocus: PropTypes.bool,
-    placeholder: PropTypes.string,
-    value: PropTypes.string,
     className: PropTypes.string,
+    icon: PropTypes.string,
     id: PropTypes.string.isRequired,
     isFocused: PropTypes.func,
-    refPoint: dtLocationShape.isRequired,
     layers: PropTypes.array.isRequired,
+    onSelect: PropTypes.func.isRequired,
+    placeholder: PropTypes.string,
+    refPoint: dtLocationShape.isRequired,
+    searchType: PropTypes.string.isRequired,
+    value: PropTypes.string,
+    ariaLabel: PropTypes.string,
   };
 
   static defaultProps = {
     autoFocus: false,
-    placeholder: '',
+    icon: undefined,
     className: '',
+    placeholder: '',
+  };
+
+  finishSelect = (item, type) => {
+    if (item.type.indexOf('Favourite') === -1) {
+      this.context.executeAction(saveSearch, { item, type });
+    }
+    this.props.onSelect(item, type);
   };
 
   onSelect = item => {
@@ -47,26 +55,52 @@ class DTOldSearchSavingAutosuggest extends React.Component {
       default:
     }
 
-    if (item.type.indexOf('Favourite') === -1) {
-      this.context.executeAction(saveSearch, { item, type });
+    if (item.type === 'OldSearch' && item.properties.gid) {
+      searchPlace(item.properties.gid, this.context.config).then(data => {
+        const newItem = { ...item };
+        if (data.features != null && data.features.length > 0) {
+          // update only position. It is surprising if, say, the name changes at selection.
+          const geom = data.features[0].geometry;
+          newItem.geometry.coordinates = geom.coordinates;
+        }
+        this.finishSelect(newItem, type);
+      });
+    } else {
+      this.finishSelect(item, type);
     }
-    this.props.onSelect(item, type);
   };
 
-  render = () => (
-    <DTSearchAutosuggest
-      autoFocus={this.props.autoFocus}
-      placeholder={this.props.placeholder}
-      isFocused={this.props.isFocused}
-      searchType={this.props.searchType}
-      value={this.props.value}
-      selectedFunction={suggestion => this.onSelect(suggestion)}
-      id={this.props.id}
-      className={this.props.className}
-      refPoint={this.props.refPoint}
-      layers={this.props.layers}
-    />
-  );
+  render = () => {
+    const {
+      autoFocus,
+      className,
+      icon,
+      id,
+      isFocused,
+      layers,
+      placeholder,
+      refPoint,
+      searchType,
+      value,
+      ariaLabel,
+    } = this.props;
+    return (
+      <DTSearchAutosuggest
+        autoFocus={autoFocus}
+        className={className}
+        icon={icon}
+        id={id}
+        isFocused={isFocused}
+        layers={layers}
+        placeholder={placeholder}
+        refPoint={refPoint}
+        searchType={searchType}
+        selectedFunction={suggestion => this.onSelect(suggestion)}
+        value={value}
+        ariaLabel={ariaLabel}
+      />
+    );
+  };
 }
 
 export default DTOldSearchSavingAutosuggest;

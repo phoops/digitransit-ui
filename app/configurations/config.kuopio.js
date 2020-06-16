@@ -1,15 +1,16 @@
+/* eslint-disable prefer-template */
 import configMerger from '../util/configMerger';
 
 const CONFIG = 'kuopio';
 const APP_TITLE = 'Reittiopas Kuopio';
 const APP_DESCRIPTION = 'Reittiopas Kuopio';
 
-const walttiConfig = require('./waltti').default;
+const walttiConfig = require('./config.waltti').default;
 
 export default configMerger(walttiConfig, {
   CONFIG,
 
-  appBarLink: { name: 'Kuopio', href: 'http://joukkoliikenne.kuopio.fi/' },
+  appBarLink: { name: 'Kuopio', href: 'https://vilkku.kuopio.fi/' },
 
   colors: {
     primary: '#0ab1c8',
@@ -29,7 +30,33 @@ export default configMerger(walttiConfig, {
   // Navbar logo
   logo: 'kuopio/logo.png',
 
+  mapLayers: {
+    tooltip: {
+      fi: 'Uutta! Saat nyt lähellä olevat bussit kartalle asetuksista.',
+      en: 'New! You can now get nearby busses on the map from the settings.',
+      sv:
+        'Nytt! I inställningarna kan du nu välja att se närliggande bussar på kartan.',
+    },
+  },
+
   feedIds: ['Kuopio', 'KuopioEly'],
+
+  showTicketInformation: true,
+
+  useTicketIcons: true,
+
+  ticketInformation: {
+    primaryAgencyName: 'Kuopion seudun joukkoliikenne',
+  },
+
+  ticketLink: 'https://vilkku.kuopio.fi/lipputyypit-hinnat/lippujen-hinnat',
+
+  // mapping fareId from OTP fare identifiers to human readable form
+  fareMapping: function mapFareId(fareId) {
+    return fareId && fareId.substring
+      ? fareId.substring(fareId.indexOf(':') + 1)
+      : '';
+  },
 
   searchParams: {
     'boundary.rect.min_lat': 62.454915,
@@ -72,7 +99,40 @@ export default configMerger(walttiConfig, {
     },
   ],
 
-  showTicketInformation: true,
+  showAllBusses: true,
+  showVehiclesOnStopPage: true,
+
+  cityBike: {
+    showCityBikes: true,
+    useSpacesAvailable: false,
+    useUrl: {
+      fi: 'https://kaupunkipyorat.kuopio.fi/',
+      sv: 'https://kaupunkipyorat.kuopio.fi/?lang=2',
+      en: 'https://kaupunkipyorat.kuopio.fi/?lang=2',
+    },
+    networks: {
+      vilkku: {
+        icon: 'citybike',
+        name: {
+          fi: 'Vilkku',
+          sv: 'Vilkku',
+          en: 'Vilkku',
+        },
+        type: 'citybike',
+        url: {
+          fi: 'https://kaupunkipyorat.kuopio.fi/',
+          sv: 'https://kaupunkipyorat.kuopio.fi/?lang=2',
+          en: 'https://kaupunkipyorat.kuopio.fi/?lang=2',
+        },
+      },
+    },
+  },
+
+  transportModes: {
+    citybike: {
+      availableForSelection: true,
+    },
+  },
 
   footer: {
     content: [
@@ -138,5 +198,17 @@ export default configMerger(walttiConfig, {
         ],
       },
     ],
+  },
+  zoneIdMapping: {
+    1: 'A',
+    2: 'B',
+    3: 'C',
+    4: 'D',
+    5: 'E',
+  },
+  stopCard: {
+    header: {
+      showZone: true,
+    },
   },
 });

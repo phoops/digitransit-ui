@@ -11,6 +11,7 @@ import MapContainer from './map/MapContainer';
 import { otpToLocation } from '../util/otpStrings';
 import { isBrowser } from '../util/browser';
 import { dtLocationShape } from '../util/shapes';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 let L;
 
@@ -29,12 +30,13 @@ function ItineraryPageMap(
     <LocationMarker
       key="fromMarker"
       position={from || otpToLocation(params.from)}
-      className="from"
+      type="from"
     />,
     <LocationMarker
+      isLarge
       key="toMarker"
       position={to || otpToLocation(params.to)}
-      className="to"
+      type="to"
     />,
   ];
 
@@ -47,8 +49,6 @@ function ItineraryPageMap(
             <LocationMarker
               key={`via_${i}`} // eslint-disable-line react/no-array-index-key
               position={markerLocation}
-              className="via"
-              noText
             />,
           );
         });
@@ -57,8 +57,6 @@ function ItineraryPageMap(
         <LocationMarker
           key="via"
           position={otpToLocation(location.query.intermediatePlaces)}
-          className="via"
-          noText
         />,
       );
     }
@@ -76,14 +74,21 @@ function ItineraryPageMap(
   }
   const fullscreen = some(routes.map(route => route.fullscreenMap));
 
-  const toggleFullscreenMap = fullscreen
-    ? router.goBack
-    : () =>
-        router.push({
-          ...location,
-          pathname: `${location.pathname}/kartta`,
-        });
-
+  const toggleFullscreenMap = () => {
+    if (fullscreen) {
+      router.goBack();
+    } else {
+      router.push({
+        ...location,
+        pathname: `${location.pathname}/kartta`,
+      });
+    }
+    addAnalyticsEvent({
+      action: fullscreen ? 'MinimizeMapOnMobile' : 'MaximizeMapOnMobile',
+      category: 'Map',
+      name: 'SummaryPage',
+    });
+  };
   const overlay = fullscreen ? (
     undefined
   ) : (

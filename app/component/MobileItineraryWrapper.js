@@ -9,6 +9,7 @@ import SwipeableViews from 'react-swipeable-views';
 import Icon from './Icon';
 import { isBrowser } from '../util/browser';
 import { getRoutePath } from '../util/path';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 export default class MobileItineraryWrapper extends React.Component {
   static propTypes = {
@@ -27,6 +28,8 @@ export default class MobileItineraryWrapper extends React.Component {
     location: PropTypes.object.isRequired,
     intl: intlShape.isRequired,
   };
+
+  itineraryTabs = [];
 
   getTabs(itineraries, selectedIndex) {
     return itineraries.map((itinerary, i) => (
@@ -54,8 +57,6 @@ export default class MobileItineraryWrapper extends React.Component {
     ));
   }
 
-  itineraryTabs = [];
-
   toggleFullscreenMap = () => {
     if (this.props.fullscreenMap) {
       this.context.router.goBack();
@@ -65,19 +66,24 @@ export default class MobileItineraryWrapper extends React.Component {
         pathname: `${this.context.location.pathname}/kartta`,
       });
     }
+    addAnalyticsEvent({
+      action: this.props.fullscreenMap
+        ? 'MinimizeMapOnMobile'
+        : 'MaximizeMapOnMobile',
+      category: 'Map',
+      name: 'SummaryPage',
+    });
   };
 
   focusMap = (lat, lon) => this.props.focus(lat, lon);
 
   switchSlide = index => {
-    if (this.context.piwik != null) {
-      this.context.piwik.trackEvent(
-        'ItinerarySettings',
-        'ItineraryDetailsClick',
-        'ItineraryDetailsExpand',
-        index,
-      );
-    }
+    addAnalyticsEvent({
+      event: 'sendMatomoEvent',
+      category: 'Itinerary',
+      action: 'OpenItineraryDetails',
+      name: index,
+    });
 
     this.context.router.replace({
       ...this.context.location,

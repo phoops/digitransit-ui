@@ -17,6 +17,8 @@ export default class ErrorBoundary extends React.Component {
 
   state = { error: null, hasRetried: false };
 
+  resetState = () => this.setState({ error: null, hasRetried: true });
+
   componentDidCatch(error, errorInfo) {
     if (this.state.hasRetried) {
       // Did retry, didn't help
@@ -28,8 +30,6 @@ export default class ErrorBoundary extends React.Component {
       this.context.raven.captureException(error, { extra: errorInfo });
     }
   }
-
-  resetState = () => this.setState({ error: null, hasRetried: true });
 
   render() {
     if (this.state.error) {

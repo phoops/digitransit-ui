@@ -26,6 +26,7 @@ import TileContainer from './TileContainer';
 import Loading from '../../Loading';
 import { isFeatureLayerEnabled } from '../../../util/mapLayerUtils';
 import MapLayerStore, { mapLayerShape } from '../../../store/MapLayerStore';
+import { addAnalyticsEvent } from '../../../util/analyticsUtils';
 
 const initialState = {
   selectableTargets: undefined,
@@ -46,6 +47,7 @@ class TileLayerContainer extends GridLayer {
       map: PropTypes.shape({
         addLayer: PropTypes.func.isRequired,
         addEventParent: PropTypes.func.isRequired,
+        closePopup: PropTypes.func.isRequired,
         removeEventParent: PropTypes.func.isRequired,
       }).isRequired,
     }).isRequired,
@@ -56,6 +58,22 @@ class TileLayerContainer extends GridLayer {
     intl: intlShape.isRequired,
     config: PropTypes.object.isRequired,
   };
+
+  PopupOptions = {
+    offset: [110, 16],
+    minWidth: 260,
+    maxWidth: 260,
+    autoPanPaddingTopLeft: [5, 125],
+    className: 'popup',
+    ref: 'popup',
+    onClose: () => this.setState({ ...initialState }),
+    autoPan: false,
+    onOpen: () => this.sendAnalytics(),
+  };
+
+  merc = new SphericalMercator({
+    size: this.props.tileSize || 256,
+  });
 
   constructor(props, context) {
     super(props, context);
@@ -134,23 +152,6 @@ class TileLayerContainer extends GridLayer {
     /* eslint-enable no-underscore-dangle */
   };
 
-  onPopupclose = () => this.setState(initialState);
-
-  PopupOptions = {
-    offset: [110, 16],
-    minWidth: 260,
-    maxWidth: 260,
-    autoPanPaddingTopLeft: [5, 125],
-    className: 'popup',
-    ref: 'popup',
-    onClose: this.onPopupclose,
-    autoPan: false,
-  };
-
-  merc = new SphericalMercator({
-    size: this.props.tileSize || 256,
-  });
-
   createTile = (tileCoords, done) => {
     const tile = new TileContainer(
       tileCoords,
@@ -159,9 +160,30 @@ class TileLayerContainer extends GridLayer {
       this.context.config,
     );
 
-    tile.onSelectableTargetClicked = (selectableTargets, coords) => {
-      if (selectableTargets && this.props.disableMapTracking) {
-        this.props.disableMapTracking(); // disable now that popup opens
+    tile.onSelectableTargetClicked = (
+      selectableTargets,
+      coords,
+      forceOpen = false,
+    ) => {
+      const {
+        disableMapTracking,
+        leaflet: { map },
+        mapLayers,
+      } = this.props;
+      const { coords: prevCoords } = this.state;
+      const popup = map._popup; // eslint-disable-line no-underscore-dangle
+
+      if (
+        popup &&
+        popup.isOpen() &&
+        (!forceOpen || (coords && coords.equals(prevCoords)))
+      ) {
+        map.closePopup();
+        return;
+      }
+
+      if (selectableTargets && disableMapTracking) {
+        disableMapTracking(); // disable now that popup opens
       }
 
       this.setState({
@@ -169,7 +191,7 @@ class TileLayerContainer extends GridLayer {
           isFeatureLayerEnabled(
             target.feature,
             target.layer,
-            this.props.mapLayers,
+            mapLayers,
             this.context.config,
           ),
         ),
@@ -184,143 +206,195 @@ class TileLayerContainer extends GridLayer {
   selectRow = option =>
     this.setState({ selectableTargets: [option], showSpinner: true });
 
+  loadingPopup = () => (
+    <div className="card" style={{ height: '12rem' }}>
+      <Loading />
+    </div>
+  );
+
+  getStopContent = (id, target) => (
+    <Relay.RootContainer
+      Component={StopMarkerPopup}
+      route={
+        target.feature.properties.stops
+          ? new TerminalRoute({
+              terminalId: id,
+              currentTime: this.state.currentTime,
+            })
+          : new StopRoute({
+              stopId: id,
+              currentTime: this.state.currentTime,
+            })
+      }
+      renderLoading={this.state.showSpinner ? this.loadingPopup : undefined}
+      renderFetched={data => <StopMarkerPopup {...data} />}
+    />
+  );
+
+  getCitybikeContent = id => (
+    <Relay.RootContainer
+      Component={CityBikePopup}
+      forceFetch
+      route={
+        new CityBikeRoute({
+          stationId: id,
+        })
+      }
+      renderLoading={this.loadingPopup}
+      renderFetched={data => <CityBikePopup {...data} />}
+    />
+  );
+
+  getParkAndRideWithIdsContent = (id, target) => (
+    <Relay.RootContainer
+      Component={ParkAndRideHubPopup}
+      forceFetch
+      route={new ParkAndRideHubRoute({ stationIds: JSON.parse(id) })}
+      renderLoading={this.loadingPopup}
+      renderFetched={data => (
+        <ParkAndRideHubPopup
+          name={
+            JSON.parse(target.feature.properties.name)[this.context.intl.locale]
+          }
+          lat={this.state.coords.lat}
+          lon={this.state.coords.lng}
+          {...data}
+        />
+      )}
+    />
+  );
+
+  getParkAndRideContent = (id, target) => (
+    <Relay.RootContainer
+      Component={ParkAndRideFacilityPopup}
+      forceFetch
+      route={new ParkAndRideFacilityRoute({ id })}
+      renderLoading={this.loadingPopup}
+      renderFetched={data => (
+        <ParkAndRideFacilityPopup
+          name={
+            JSON.parse(target.feature.properties.name)[this.context.intl.locale]
+          }
+          lat={this.state.coords.lat}
+          lon={this.state.coords.lng}
+          {...data}
+        />
+      )}
+    />
+  );
+
+  showOneTargetPopup = () => {
+    const target = this.state.selectableTargets[0];
+    let id;
+    let contents;
+    if (target.layer === 'stop') {
+      id = target.feature.properties.gtfsId;
+      contents = this.getStopContent(id, target);
+    } else if (target.layer === 'citybike') {
+      ({ id } = target.feature.properties);
+      contents = this.getCitybikeContent(id);
+    } else if (
+      target.layer === 'parkAndRide' &&
+      target.feature.properties.facilityIds
+    ) {
+      id = target.feature.properties.facilityIds;
+      contents = this.getParkAndRideWithIdsContent(id, target);
+    } else if (target.layer === 'parkAndRide') {
+      ({ id } = target.feature);
+      contents = this.getParkAndRideContent(id, target);
+    } else if (target.layer === 'ticketSales') {
+      id = target.feature.properties.NID_fi;
+      contents = <TicketSalesPopup {...target.feature.properties} />;
+    }
+    return (
+      <Popup {...this.PopupOptions} key={id} position={this.state.coords}>
+        {contents}
+      </Popup>
+    );
+  };
+
+  showMultipleTargetsPopup = () => (
+    <Popup
+      key={this.state.coords.toString()}
+      {...this.PopupOptions}
+      maxHeight={220}
+      position={this.state.coords}
+    >
+      <MarkerSelectPopup
+        selectRow={this.selectRow}
+        options={this.state.selectableTargets}
+        location={this.state.coords}
+      />
+    </Popup>
+  );
+
+  showLocationPopup = () => (
+    <Popup
+      key={this.state.coords.toString()}
+      {...this.PopupOptions}
+      maxHeight={220}
+      position={this.state.coords}
+    >
+      <LocationPopup
+        name="" // TODO: fill in name from reverse geocoding, possibly in a container.
+        lat={this.state.coords.lat}
+        lon={this.state.coords.lng}
+      />
+    </Popup>
+  );
+
+  /**
+   * Send an analytics event on opening popup
+   */
+  sendAnalytics() {
+    let name = null;
+    let type = null;
+    if (this.state.selectableTargets.length === 0) {
+      return;
+      // event for clicking somewhere else on the map will be handled in LocationPopup
+    }
+    if (this.state.selectableTargets.length === 1) {
+      const target = this.state.selectableTargets[0];
+      const { properties } = target.feature;
+      name = target.layer;
+      switch (name) {
+        case 'ticketSales':
+          type = properties.Tyyppi;
+          break;
+        case 'stop':
+          ({ type } = properties);
+          if (properties.stops) {
+            type += '_TERMINAL';
+          }
+          break;
+        default:
+          break;
+      }
+    } else {
+      name = 'multiple';
+    }
+    const pathPrefixMatch = window.location.pathname.match(/^\/([a-z]{2,})\//);
+    const context = pathPrefixMatch ? pathPrefixMatch[1] : 'index';
+    addAnalyticsEvent({
+      action: 'SelectMapPoint',
+      category: 'Map',
+      name,
+      type,
+      source: context,
+    });
+  }
+
   render() {
     let popup = null;
-    let contents;
-
-    const loadingPopup = () => (
-      <div className="card" style={{ height: '12rem' }}>
-        <Loading />
-      </div>
-    );
 
     if (typeof this.state.selectableTargets !== 'undefined') {
-      if (this.state.selectableTargets.length === 1) {
-        let id;
-        if (this.state.selectableTargets[0].layer === 'stop') {
-          id = this.state.selectableTargets[0].feature.properties.gtfsId;
-          contents = (
-            <Relay.RootContainer
-              Component={StopMarkerPopup}
-              route={
-                this.state.selectableTargets[0].feature.properties.stops
-                  ? new TerminalRoute({
-                      terminalId: id,
-                      currentTime: this.state.currentTime,
-                    })
-                  : new StopRoute({
-                      stopId: id,
-                      currentTime: this.state.currentTime,
-                    })
-              }
-              renderLoading={this.state.showSpinner ? loadingPopup : undefined}
-              renderFetched={data => <StopMarkerPopup {...data} />}
-            />
-          );
-        } else if (this.state.selectableTargets[0].layer === 'citybike') {
-          ({ id } = this.state.selectableTargets[0].feature.properties);
-          contents = (
-            <Relay.RootContainer
-              Component={CityBikePopup}
-              forceFetch
-              route={
-                new CityBikeRoute({
-                  stationId: id,
-                })
-              }
-              renderLoading={loadingPopup}
-              renderFetched={data => <CityBikePopup {...data} />}
-            />
-          );
-        } else if (
-          this.state.selectableTargets[0].layer === 'parkAndRide' &&
-          this.state.selectableTargets[0].feature.properties.facilityIds
-        ) {
-          id = this.state.selectableTargets[0].feature.properties.facilityIds;
-          contents = (
-            <Relay.RootContainer
-              Component={ParkAndRideHubPopup}
-              forceFetch
-              route={new ParkAndRideHubRoute({ stationIds: JSON.parse(id) })}
-              renderLoading={loadingPopup}
-              renderFetched={data => (
-                <ParkAndRideHubPopup
-                  name={
-                    JSON.parse(
-                      this.state.selectableTargets[0].feature.properties.name,
-                    )[this.context.intl.locale]
-                  }
-                  lat={this.state.coords.lat}
-                  lon={this.state.coords.lng}
-                  {...data}
-                />
-              )}
-            />
-          );
-        } else if (this.state.selectableTargets[0].layer === 'parkAndRide') {
-          ({ id } = this.state.selectableTargets[0].feature);
-          contents = (
-            <Relay.RootContainer
-              Component={ParkAndRideFacilityPopup}
-              forceFetch
-              route={new ParkAndRideFacilityRoute({ id })}
-              renderLoading={loadingPopup}
-              renderFetched={data => (
-                <ParkAndRideFacilityPopup
-                  name={
-                    JSON.parse(
-                      this.state.selectableTargets[0].feature.properties.name,
-                    )[this.context.intl.locale]
-                  }
-                  lat={this.state.coords.lat}
-                  lon={this.state.coords.lng}
-                  {...data}
-                />
-              )}
-            />
-          );
-        } else if (this.state.selectableTargets[0].layer === 'ticketSales') {
-          id = this.state.selectableTargets[0].feature.properties.FID;
-          contents = (
-            <TicketSalesPopup
-              {...this.state.selectableTargets[0].feature.properties}
-            />
-          );
-        }
-        popup = (
-          <Popup {...this.PopupOptions} key={id} position={this.state.coords}>
-            {contents}
-          </Popup>
-        );
-      } else if (this.state.selectableTargets.length > 1) {
-        popup = (
-          <Popup
-            key={this.state.coords.toString()}
-            {...this.PopupOptions}
-            maxHeight={220}
-            position={this.state.coords}
-          >
-            <MarkerSelectPopup
-              selectRow={this.selectRow}
-              options={this.state.selectableTargets}
-            />
-          </Popup>
-        );
-      } else if (this.state.selectableTargets.length === 0) {
-        popup = (
-          <Popup
-            key={this.state.coords.toString()}
-            {...this.PopupOptions}
-            maxHeight={220}
-            position={this.state.coords}
-          >
-            <LocationPopup
-              name="" // TODO: fill in name from reverse geocoding, possibly in a container.
-              lat={this.state.coords.lat}
-              lon={this.state.coords.lng}
-            />
-          </Popup>
-        );
+      const numOfTargets = this.state.selectableTargets.length;
+      if (numOfTargets === 1) {
+        popup = this.showOneTargetPopup();
+      } else if (numOfTargets > 1) {
+        popup = this.showMultipleTargetsPopup();
+      } else if (numOfTargets === 0) {
+        popup = this.showLocationPopup();
       }
     }
 
@@ -328,8 +402,10 @@ class TileLayerContainer extends GridLayer {
   }
 }
 
-export default withLeaflet(
+const connectedComponent = withLeaflet(
   connectToStores(TileLayerContainer, [MapLayerStore], context => ({
     mapLayers: context.getStore(MapLayerStore).getMapLayers(),
   })),
 );
+
+export { connectedComponent as default, TileLayerContainer as Component };

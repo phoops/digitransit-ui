@@ -1,4 +1,4 @@
-import isEmpty from 'lodash/isEmpty';
+import { isEmpty, xor } from 'lodash';
 import isString from 'lodash/isString';
 import omit from 'lodash/omit';
 import trim from 'lodash/trim';
@@ -6,6 +6,8 @@ import cloneDeep from 'lodash/cloneDeep';
 
 import { otpToLocation } from './otpStrings';
 import { OptimizeType } from '../constants';
+import { getCustomizedSettings } from '../store/localStorage';
+import { addAnalyticsEvent } from './analyticsUtils';
 
 /**
  * Removes selected itinerary index from url (pathname) and
@@ -53,6 +55,23 @@ export const clearQueryParams = (router, paramsToClear = []) => {
 };
 
 /**
+ * Processes query so that empty arrays will be preserved in URL
+ *
+ * @param {*} query The location query params to fix
+ */
+
+export const fixArrayParams = query => {
+  const fixedQuery = { ...query };
+
+  Object.keys(query).forEach(key => {
+    if (Array.isArray(query[key]) && !query[key].length) {
+      fixedQuery[key] = '';
+    }
+  });
+  return fixedQuery;
+};
+
+/**
  * Updates the browser's url with the given parameters.
  *
  * @param {*} router The router
@@ -69,10 +88,11 @@ export const replaceQueryParams = (router, newParams) => {
     location.query.optimize === OptimizeType.Triangle;
   const triangleFactors = ['safetyFactor', 'slopeFactor', 'timeFactor'];
 
-  const query = {
+  const query = fixArrayParams({
     ...location.query,
     ...newParams,
-  };
+  });
+
   router.replace({
     ...location,
     query: removeTriangleFactors ? omit(query, triangleFactors) : query,
@@ -97,9 +117,11 @@ export const getIntermediatePlaces = query => {
   const { intermediatePlaces } = query;
   if (!intermediatePlaces) {
     return [];
-  } else if (Array.isArray(intermediatePlaces)) {
+  }
+  if (Array.isArray(intermediatePlaces)) {
     return intermediatePlaces.map(otpToLocation);
-  } else if (isString(intermediatePlaces)) {
+  }
+  if (isString(intermediatePlaces)) {
     if (isEmpty(trim(intermediatePlaces))) {
       return [];
     }
@@ -132,15 +154,31 @@ const getArrayValueOrDefault = (value, defaultValue = []) => {
   return decoded ? decoded.split(',') : defaultValue;
 };
 
+/**
+ * Adds the given route as a preferred or unpreferred route in the routing request.
+ *
+ * @param {*} query query params
+ * @param {*} preferred If this valus is true, gets preferredRoutes, else gets unpreferredRoutes
+ */
 const getRoutes = (query, preferred) => {
-  if (!query) {
-    return [];
+  const routesType = preferred ? 'preferredRoutes' : 'unpreferredRoutes';
+  if (query && query[routesType]) {
+    return getArrayValueOrDefault(query[routesType]);
   }
-  return getArrayValueOrDefault(
-    preferred ? query.preferredRoutes : query.unpreferredRoutes,
-  );
+  const routes = getCustomizedSettings()[routesType];
+  if (Array.isArray(routes) && !isEmpty(routes)) {
+    return routes;
+  }
+  return [];
 };
 
+/**
+ * Adds the given route as a preferred or unpreferred route in the routing request.
+ *
+ * @param {*} router The router
+ * @param {*} routeToAdd The route identifier to add
+ * @param {*} preferred If this valus is true, add to preferredRoutes, else add to unpreferredRoutes
+ */
 const addRoute = (router, routeToAdd, preferred) => {
   const { query } = router.getCurrentLocation();
   const routes = getRoutes(query, preferred);
@@ -152,20 +190,32 @@ const addRoute = (router, routeToAdd, preferred) => {
   replaceQueryParams(router, {
     [`${preferred ? 'preferred' : 'unpreferred'}Routes`]: routes.join(','),
   });
+  const action = preferred ? 'PreferRoute' : 'AvoidRoute';
+  addAnalyticsEvent({
+    action,
+    category: 'ItinerarySettings',
+    name: routeToAdd,
+  });
 };
 
+/**
+ * Removes the given route from preferred or unpreferred routes in the routing request.
+ *
+ * @param {*} router The router
+ * @param {*} routeToRemove The route identifier to remove
+ * @param {*} preferred This value is true if removed from preferredRoutes, false if from unpreferredRoutes
+ */
 const removeRoute = (router, routeToRemove, preferred) => {
   const { query } = router.getCurrentLocation();
-  const routes = getRoutes(query, preferred);
-  if (!routes.includes(routeToRemove)) {
+  // routes will have existing routes - routeToRemove
+  const currentRoutes = getRoutes(query, preferred);
+  if (!currentRoutes.includes(routeToRemove)) {
     return;
   }
+  const routes = xor(currentRoutes, [routeToRemove]);
+  const routesType = `${preferred ? 'preferred' : 'unpreferred'}Routes`;
 
-  replaceQueryParams(router, {
-    [`${preferred ? 'preferred' : 'unpreferred'}Routes`]: routes.filter(
-      r => r !== routeToRemove,
-    ),
-  });
+  replaceQueryParams(router, { [routesType]: routes.join(',') });
 };
 
 /**
@@ -268,6 +318,11 @@ export const getQuerySettings = query => {
     ...(hasKey('walkSpeed') && {
       walkSpeed: getNumberValueOrDefault(query.walkSpeed),
     }),
+    ...(hasKey('allowedBikeRentalNetworks') && {
+      allowedBikeRentalNetworks: getArrayValueOrDefault(
+        query.allowedBikeRentalNetworks,
+      ),
+    }),
   };
 };
 
@@ -334,6 +389,11 @@ export const setPreferGreenways = (
   } else {
     replaceQueryParams(router, { optimize: OptimizeType.Greenways });
   }
+  addAnalyticsEvent({
+    action: 'EnablePreferCycleways',
+    category: 'ItinerarySettings',
+    name: null,
+  });
 };
 
 /**
@@ -361,6 +421,11 @@ export const setAvoidElevationChanges = (
     slopeFactor: bothEnabled ? TWO_FACTORS_ENABLED : ONE_FACTOR_ENABLED,
     timeFactor: FACTOR_DISABLED,
   });
+  addAnalyticsEvent({
+    action: 'EnableAvoidChangesInElevation',
+    category: 'ItinerarySettings',
+    name: null,
+  });
 };
 
 /**
@@ -387,6 +452,11 @@ export const resetPreferGreenways = (
       optimize: defaultOptimize,
     });
   }
+  addAnalyticsEvent({
+    action: 'DisablePreferCycleways',
+    category: 'ItinerarySettings',
+    name: null,
+  });
 };
 
 /**
@@ -413,4 +483,9 @@ export const resetAvoidElevationChanges = (
       optimize: defaultOptimize,
     });
   }
+  addAnalyticsEvent({
+    action: 'DisableAvoidChangesInElevation',
+    category: 'ItinerarySettings',
+    name: null,
+  });
 };

@@ -15,7 +15,7 @@ import {
 import storeOrigin from '../action/originActions';
 import FrontPagePanelLarge from './FrontPagePanelLarge';
 import FrontPagePanelSmall from './FrontPagePanelSmall';
-import MapWithTracking from '../component/map/MapWithTracking';
+import MapWithTracking from './map/MapWithTracking';
 import PageFooter from './PageFooter';
 import DTAutosuggestPanel from './DTAutosuggestPanel';
 import { isBrowser } from '../util/browser';
@@ -36,6 +36,8 @@ import SelectStreetModeDialog from './SelectStreetModeDialog';
 import events from '../util/events';
 import * as ModeUtils from '../util/modeUtils';
 import withBreakpoint from '../util/withBreakpoint';
+import ComponentUsageExample from './ComponentUsageExample';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 const debug = d('IndexPage.js');
 
@@ -43,12 +45,12 @@ class IndexPage extends React.Component {
   static contextTypes = {
     location: locationShape.isRequired,
     router: routerShape.isRequired,
-    piwik: PropTypes.object,
     config: PropTypes.object.isRequired,
     executeAction: PropTypes.func.isRequired,
   };
 
   static propTypes = {
+    autoSetOrigin: PropTypes.bool,
     breakpoint: PropTypes.string.isRequired,
     origin: dtLocationShape.isRequired,
     destination: dtLocationShape.isRequired,
@@ -63,12 +65,19 @@ class IndexPage extends React.Component {
     ).isRequired,
   };
 
+  static defaultProps = {
+    autoSetOrigin: true,
+    tab: TAB_NEARBY,
+  };
+
   constructor(props, context) {
     super(props);
     this.state = {
       mapExpanded: false, // Show right-now as default
     };
-    context.executeAction(storeOrigin, props.origin);
+    if (this.props.autoSetOrigin) {
+      context.executeAction(storeOrigin, props.origin);
+    }
   }
 
   componentDidMount() {
@@ -121,20 +130,24 @@ class IndexPage extends React.Component {
     }
   };
 
-  trackEvent = (...args) => {
-    if (typeof this.context.piwik === 'object') {
-      this.context.piwik.trackEvent(...args);
-    }
-  };
-
   clickNearby = () => {
     this.openTab(TAB_NEARBY);
-    this.trackEvent('Front page tabs', 'Nearby', 'open');
+    addAnalyticsEvent({
+      event: 'sendMatomoEvent',
+      category: 'Front page tabs',
+      action: 'Nearby',
+      name: 'open',
+    });
   };
 
   clickFavourites = () => {
     this.openTab(TAB_FAVOURITES);
-    this.trackEvent('Front page tabs', 'Favourites', 'open');
+    addAnalyticsEvent({
+      event: 'sendMatomoEvent',
+      category: 'Front page tabs',
+      action: 'Favourites',
+      name: 'open',
+    });
   };
 
   openTab = tab => {
@@ -149,6 +162,13 @@ class IndexPage extends React.Component {
   };
 
   togglePanelExpanded = () => {
+    addAnalyticsEvent({
+      action: this.state.mapExpanded
+        ? 'MinimizeMapOnMobile'
+        : 'MaximizeMapOnMobile',
+      category: 'Map',
+      name: 'IndexPage',
+    });
     this.setState(prevState => ({ mapExpanded: !prevState.mapExpanded }));
   };
 
@@ -172,9 +192,14 @@ class IndexPage extends React.Component {
   renderStreetModeSelector = (config, router) => (
     <SelectStreetModeDialog
       selectedStreetMode={ModeUtils.getStreetMode(router.location, config)}
-      selectStreetMode={(streetMode, isExclusive) =>
-        ModeUtils.setStreetMode(streetMode, config, router, isExclusive)
-      }
+      selectStreetMode={(streetMode, isExclusive) => {
+        addAnalyticsEvent({
+          category: 'ItinerarySettings',
+          action: 'SelectTravelingModeFromIndexPage',
+          name: streetMode,
+        });
+        ModeUtils.setStreetMode(streetMode, config, router, isExclusive);
+      }}
       streetModeConfigs={ModeUtils.getAvailableStreetModeConfigs(config)}
     />
   );
@@ -225,6 +250,7 @@ class IndexPage extends React.Component {
           showStops
           showScaleBar
           origin={origin}
+          destination={destination}
           renderCustomButtons={() => (
             <React.Fragment>
               {this.renderStreetModeSelector(config, router)}
@@ -258,6 +284,7 @@ class IndexPage extends React.Component {
             breakpoint={breakpoint}
             showStops
             origin={origin}
+            destination={destination}
             renderCustomButtons={() => (
               <React.Fragment>
                 {this.renderStreetModeSelector(config, router)}
@@ -318,6 +345,24 @@ const Index = shouldUpdate(
 )(IndexPage);
 
 const IndexPageWithBreakpoint = withBreakpoint(Index);
+
+IndexPageWithBreakpoint.description = (
+  <ComponentUsageExample isFullscreen>
+    <IndexPageWithBreakpoint
+      autoSetOrigin={false}
+      destination={{
+        ready: false,
+        set: false,
+      }}
+      origin={{
+        ready: false,
+        set: false,
+      }}
+      routes={[]}
+      showSpinner={false}
+    />
+  </ComponentUsageExample>
+);
 
 /* eslint-disable no-param-reassign */
 const processLocation = (locationString, locationState, intl) => {
@@ -453,4 +498,7 @@ IndexPageWithPosition.contextTypes = {
   intl: intlShape,
 };
 
-export default IndexPageWithPosition;
+export {
+  IndexPageWithPosition as default,
+  IndexPageWithBreakpoint as Component,
+};

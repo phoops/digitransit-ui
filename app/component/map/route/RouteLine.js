@@ -24,7 +24,7 @@ function RouteLine(props) {
       <LocationMarker
         key="from"
         position={props.pattern.stops[0]}
-        className="from"
+        type="from"
       />,
     );
 
@@ -32,7 +32,7 @@ function RouteLine(props) {
       <LocationMarker
         key="to"
         position={props.pattern.stops[props.pattern.stops.length - 1]}
-        className="to"
+        type="to"
       />,
     );
   }
@@ -44,10 +44,11 @@ function RouteLine(props) {
   const markers = props.pattern
     ? props.pattern.stops
         .filter(stop => !filteredIds.includes(stop.gtfsId))
-        .map(stop => (
+        .map((stop, i) => (
           <StopMarker
             stop={stop}
-            key={stop.gtfsId}
+            key={`${stop.gtfsId}-${props.pattern.code}${i ===
+              props.pattern.stops.length - 1 && '-last'}`}
             mode={modeClass + (props.thin ? ' thin' : '')}
             thin={props.thin}
           />
@@ -70,6 +71,7 @@ function RouteLine(props) {
 
 RouteLine.propTypes = {
   pattern: PropTypes.shape({
+    code: PropTypes.string,
     route: PropTypes.shape({
       mode: PropTypes.string.isRequired,
       color: PropTypes.string,
@@ -78,6 +80,7 @@ RouteLine.propTypes = {
       PropTypes.shape({
         lat: PropTypes.number.isRequired,
         lon: PropTypes.number.isRequired,
+        code: PropTypes.string,
       }).isRequired,
     ).isRequired,
     geometry: PropTypes.arrayOf(
@@ -100,6 +103,7 @@ export default Relay.createContainer(RouteLine, {
   fragments: {
     pattern: () => Relay.QL`
       fragment on Pattern {
+        code
         geometry {
           lat
           lon
@@ -113,6 +117,7 @@ export default Relay.createContainer(RouteLine, {
           name
           gtfsId
           platformCode
+          code
           ${StopCardHeaderContainer.getFragment('stop')}
         }
       }

@@ -1,15 +1,18 @@
+import cx from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
+import { FormattedMessage } from 'react-intl';
 import Relay from 'react-relay/classic';
-import cx from 'classnames';
 import { Link } from 'react-router';
 import orderBy from 'lodash/orderBy';
 import uniqBy from 'lodash/uniqBy';
-import { routeNameCompare } from '../util/searchUtils';
 
 import Departure from './Departure';
-import { PREFIX_ROUTES } from '../util/path';
 import DepartureListHeader from './DepartureListHeader';
+import Icon from './Icon';
+import { PREFIX_ROUTES, PREFIX_STOPS } from '../util/path';
+import { routeNameCompare } from '../util/searchUtils';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 export const mapRoutes = (stopFromProps, stopType) => {
   const stopRoutes = [];
@@ -77,12 +80,31 @@ const RoutesAndPlatformsForStops = props => {
     props.params.terminalId ? 'terminal' : 'stop',
   ).sort((x, y) => routeNameCompare(x.pattern.route, y.pattern.route));
 
+  if (mappedRoutes.length === 0) {
+    return (
+      <div className="stop-no-departures-container">
+        <Icon img="icon-icon_station" />
+        <FormattedMessage id="no-departures" defaultMessage="No departures" />
+      </div>
+    );
+  }
+
+  // DT-3331: added query string sort=no to Link's to
   const timeTableRows = mappedRoutes.map(route => (
     <Link
       to={`/${PREFIX_ROUTES}/${route.pattern.route.gtfsId ||
-        route.pattern.route.gtfsId}/pysakit/${route.pattern.code}`}
+        route.pattern.route.gtfsId}/${PREFIX_STOPS}/${
+        route.pattern.code
+      }?sort=no`}
       key={`${route.pattern.code}-${route.headsign}-${route.pattern.route.id ||
         route.pattern.route.gtfsId}-${route.stop.platformCode}`}
+      onClick={() => {
+        addAnalyticsEvent({
+          category: 'Stop',
+          name: 'RoutesAndPlatformsTab',
+          action: 'OpenRouteViewFromStop',
+        });
+      }}
     >
       <Departure
         key={`${route.pattern.code}-${route.headsign}-${route.pattern.route

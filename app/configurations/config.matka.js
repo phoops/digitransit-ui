@@ -1,7 +1,16 @@
+import { PREFIX_ITINERARY_SUMMARY } from '../util/path';
+
+/* eslint-disable prefer-template */
 const CONFIG = 'matka';
 const APP_DESCRIPTION = 'Matka.fi–palvelu.';
 const APP_TITLE = 'Matka.fi';
 const YEAR = 1900 + new Date().getYear();
+const STATIC_MESSAGE_URL =
+  process.env.STATIC_MESSAGE_URL ||
+  'https://tyokalu.navici.com/yleisviestipalvelu/messages/';
+
+// route timetable data needs to be up-to-date before this is enabled
+// const HSLRouteTimetable = require('./timetableConfigUtils').default.HSLRoutes;
 
 export default {
   CONFIG,
@@ -34,11 +43,35 @@ export default {
 
   favicon: './app/configurations/images/hsl/icon_favicon-matkafi.svg',
 
-  feedIds: ['MATKA', 'HSL', 'tampere', 'LINKKI', 'lautta', 'OULU'],
+  feedIds: [
+    'MATKA',
+    'HSL',
+    'tampere',
+    'LINKKI',
+    'lautta',
+    'OULU',
+    'MatkahuoltoKainuu',
+    'MatkahuoltoSavo',
+    'MatkahuoltoKanta',
+    'MatkahuoltoKarjala',
+    'MatkahuoltoKeski',
+    'MatkahuoltoKyme',
+    'MatkahuoltoLappi',
+    'MatkahuoltoPohjanmaa',
+    'MatkahuoltoSatakunta',
+    'MatkahuoltoVakka',
+    'MatkahuoltoVantaa',
+    'MatkahuoltoVarsinais',
+  ],
 
   meta: {
     description: APP_DESCRIPTION,
-    keywords: 'reitti,reitit,opas,reittiopas,joukkoliikenne',
+    keywords: `${PREFIX_ITINERARY_SUMMARY},reitit,opas,reittiopas,joukkoliikenne`,
+  },
+
+  routeTimetables: {
+    // route timetable data needs to be up-to-date before this is enabled
+    //  HSL: HSLRouteTimetable,
   },
 
   footer: {
@@ -48,8 +81,7 @@ export default {
       {
         name: 'footer-feedback',
         nameEn: 'Submit feedback',
-        href:
-          'http://www.liikennevirasto.fi/liikennejarjestelma/henkiloliikenne/joukkoliikenteen-palvelut/informaatiopalvelut/liikkujan-infopalvelut/matka.fi-palautesivu',
+        href: 'https://www.traficom.fi/fi/asioi-kanssamme/reittiopas',
         icon: 'icon-icon_speech-bubble',
       },
       {
@@ -62,6 +94,74 @@ export default {
   },
 
   redirectReittiopasParams: true,
+
+  cityBike: {
+    showCityBikes: true,
+    networks: {
+      smoove: {
+        icon: 'citybike',
+        name: {
+          fi: 'Helsinki ja Espoo',
+          sv: 'Helsingfors och Esbo',
+          en: 'Helsinki and Espoo',
+        },
+        type: 'citybike',
+        url: {
+          fi: 'https://www.hsl.fi/kaupunkipyorat',
+          sv: 'https://www.hsl.fi/sv/stadscyklar',
+          en: 'https://www.hsl.fi/en/citybikes',
+        },
+      },
+      vantaa: {
+        icon: 'citybike-secondary',
+        name: {
+          fi: 'Vantaa',
+          sv: 'Vanda',
+          en: 'Vantaa',
+        },
+        type: 'citybike',
+        url: {
+          fi: 'https://www.hsl.fi/kaupunkipyorat',
+          sv: 'https://www.hsl.fi/sv/stadscyklar',
+          en: 'https://www.hsl.fi/en/citybikes',
+        },
+      },
+      turku: {
+        icon: 'citybike',
+        name: {
+          fi: 'Turku',
+          sv: 'Åbo',
+          en: 'Turku',
+        },
+        type: 'citybike',
+        url: {
+          fi: 'https://www.foli.fi/kaupunkipyorat',
+          sv: 'https://www.foli.fi/sv/stadscyklar',
+          en: 'https://www.foli.fi/en/citybikes',
+        },
+      },
+      vilkku: {
+        icon: 'citybike',
+        name: {
+          fi: 'Vilkku',
+          sv: 'Vilkku',
+          en: 'Vilkku',
+        },
+        type: 'citybike',
+        url: {
+          fi: 'https://kaupunkipyorat.kuopio.fi/',
+          sv: 'https://kaupunkipyorat.kuopio.fi/?lang=2',
+          en: 'https://kaupunkipyorat.kuopio.fi/?lang=2',
+        },
+      },
+    },
+  },
+
+  transportModes: {
+    citybike: {
+      availableForSelection: true,
+    },
+  },
 
   aboutThisService: {
     fi: [
@@ -91,6 +191,5 @@ export default {
       },
     ],
   },
-  staticMessagesUrl:
-    'https://beta.liikennevirasto.fi/joukkoliikenne/yleisviesti/',
+  staticMessagesUrl: STATIC_MESSAGE_URL,
 };

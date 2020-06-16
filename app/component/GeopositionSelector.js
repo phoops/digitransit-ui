@@ -9,6 +9,7 @@ import { navigateTo } from '../util/path';
 import { startLocationWatch } from '../action/PositionActions';
 import OriginSelectorRow from './OriginSelectorRow';
 import PositionStore from '../store/PositionStore';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 class GeopositionSelector extends React.Component {
   static propTypes = {
@@ -48,6 +49,7 @@ class GeopositionSelector extends React.Component {
         destination,
         context: '/',
         router: this.context.router,
+        base: this.context.router.location,
         tab: this.props.tab,
       });
     }
@@ -61,6 +63,11 @@ class GeopositionSelector extends React.Component {
         icon="icon-icon_position"
         onClick={() => {
           this.setState({ initiatedGPS: true });
+          addAnalyticsEvent({
+            action: 'EditJourneyStartPoint',
+            category: 'ItinerarySettings',
+            name: 'NearYouCurrentLocation',
+          });
           this.context.executeAction(startLocationWatch);
         }}
         label={this.context.intl.formatMessage({

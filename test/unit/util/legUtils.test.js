@@ -406,4 +406,168 @@ describe('legUtils', () => {
       expect(utils.getTotalDistance(itinerary)).to.equal(6);
     });
   });
+
+  describe('getZones', () => {
+    it('should return an empty array if there are no legs', () => {
+      expect(utils.getZones({})).to.deep.equal([]);
+      expect(utils.getZones(undefined)).to.deep.equal([]);
+      expect(utils.getZones(null)).to.deep.equal([]);
+      expect(utils.getZones([])).to.deep.equal([]);
+    });
+
+    it('should ignore a missing "from" field', () => {
+      const legs = [
+        {
+          to: {
+            stop: {
+              zoneId: 'A',
+            },
+          },
+        },
+      ];
+      expect(utils.getZones(legs)).to.deep.equal(['A']);
+    });
+
+    it('should ignore a missing "to" field', () => {
+      const legs = [
+        {
+          from: {
+            stop: {
+              zoneId: 'A',
+            },
+          },
+        },
+      ];
+      expect(utils.getZones(legs)).to.deep.equal(['A']);
+    });
+
+    it('should retrieve the zone from "from"', () => {
+      const legs = [
+        {
+          from: {
+            stop: {
+              zoneId: 'A',
+            },
+          },
+          to: {
+            stop: {
+              zoneId: null,
+            },
+          },
+        },
+      ];
+      expect(utils.getZones(legs)).to.deep.equal(['A']);
+    });
+
+    it('should retrieve the zone from "to"', () => {
+      const legs = [
+        {
+          from: {
+            stop: {
+              zoneId: null,
+            },
+          },
+          to: {
+            stop: {
+              zoneId: 'A',
+            },
+          },
+        },
+      ];
+      expect(utils.getZones(legs)).to.deep.equal(['A']);
+    });
+
+    it('should retrieve the zone from "intermediatePlaces"', () => {
+      const legs = [
+        {
+          intermediatePlaces: [
+            {
+              stop: null,
+            },
+            {
+              stop: {
+                zoneId: null,
+              },
+            },
+            {
+              stop: {
+                zoneId: 'A',
+              },
+            },
+          ],
+        },
+      ];
+      expect(utils.getZones(legs)).to.deep.equal(['A']);
+    });
+
+    it('should add zone "B" if zones "A" and "C" already exist', () => {
+      const legs = [
+        {
+          from: {
+            stop: {
+              zoneId: 'A',
+            },
+          },
+        },
+        {
+          to: {
+            stop: {
+              zoneId: 'C',
+            },
+          },
+        },
+      ];
+      expect(utils.getZones(legs)).to.deep.equal(['A', 'B', 'C']);
+    });
+
+    it('should return unique values in alphabetical order', () => {
+      const legs = [
+        {
+          from: null,
+          intermediatePlaces: [
+            {
+              stop: {
+                zoneId: 'B',
+              },
+            },
+            {
+              stop: {
+                zoneId: 'A',
+              },
+            },
+          ],
+          to: {
+            stop: {
+              zoneId: 'A',
+            },
+          },
+        },
+        {
+          from: {
+            stop: {
+              zoneId: 'A',
+            },
+          },
+          to: {
+            stop: {
+              zoneId: 'B',
+            },
+          },
+        },
+        {
+          from: {
+            stop: {
+              zoneId: 'C',
+            },
+          },
+          to: {
+            stop: {
+              zoneId: 'B',
+            },
+          },
+        },
+      ];
+      expect(utils.getZones(legs)).to.deep.equal(['A', 'B', 'C']);
+    });
+  });
 });

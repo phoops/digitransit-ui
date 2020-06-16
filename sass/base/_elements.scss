@@ -10,14 +10,33 @@ $border-radius-rounded: 30px;
   overflow-x: hidden;
 }
 .card-header {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
   background-color: $white;
   padding: 0.4em 0 0.5em;
 
-  .card-header-wrapper {
-    flex-grow: 1;
+  .card-header-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .card-header-wrapper {
+      flex-grow: 1;
+    }
+  }
+
+  .zone-icon-container {
+    align-items: center;
+    color: $primary-color;
+    display: flex;
+    font-size: $font-size-xxsmall;
+    font-weight: $font-weight-medium;
+    padding-bottom: $padding-small;
+
+    .icon {
+      display: block;
+      height: 2em;
+      margin-left: 0.5em;
+      width: 2em;
+    }
   }
 
   .h3 {
@@ -62,54 +81,24 @@ $border-radius-rounded: 30px;
 /* Modal */
 #app .modal {
   border-radius: $border-radius;
-  padding: 10px 22px;
-  max-height: 85%;
   cursor: auto;
+  height: 85%;
+  max-height: 85%;
+  padding: 0;
 
-  p {
-    margin: 10px 0;
-  }
-  .modal-wrapper {
-    height: 100%;
-  }
   .modal-content {
-    max-height: 64vh;
-    overflow-y: auto;
-    section {
-      padding-bottom: 20px;
-    }
+    height: 100%;
+    max-height: calc(100% - 5em);
   }
+
   .modal-top-nav {
-    padding-top: 10px;
-  }
-  .disruption-header {
-    .line {
-      margin: 0 5px 0 10px;
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5em;
+
+    h2 {
+      margin: $padding-xsmall 0;
     }
-    .time {
-      &:before {
-        content: ' – ';
-      }
-    }
-  }
-  .disruption-details {
-    span {
-      display: block;
-    }
-    b {
-      float: left;
-      padding-right: 5px;
-    }
-  }
-  .icon.center {
-    display: block;
-    float: left;
-    margin-top: 3px;
-  }
-  .line,
-  .time {
-    padding: 0;
-    @include font-narrow-medium;
   }
 }
 
@@ -119,6 +108,21 @@ $border-radius-rounded: 30px;
   width: 1em;
   height: 1em;
   fill: currentColor;
+
+  &.caution {
+    color: $white;
+    fill: $disruption-color;
+  }
+
+  &.info {
+    color: $gray-blue;
+  }
+
+  &.inline-icon {
+    margin-left: $padding-xsmall;
+    position: relative;
+    top: 0.125em;
+  }
 }
 
 .favourite-icon {
@@ -181,11 +185,6 @@ $border-radius-rounded: 30px;
 
 .prefix-icon {
   margin-right: 6px;
-}
-.info.icon {
-  width: 24px;
-  height: 24px;
-  color: $gray-blue;
 }
 
 .dotted-link {

@@ -1,87 +1,105 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
-import * as data from '../test-data/gtfsrt-feed';
+import converter from 'base64-arraybuffer';
 import bindings from '../../../app/util/gtfsrt';
-import GtfsRtParser, { parseFeed } from '../../../app/util/gtfsRtParser';
+import { parseFeedMQTT } from '../../../app/util/gtfsRtParser';
 
-const defaultAgency = 'HSL';
-const defaultRoutes = [
-  {
-    gtfsId: '32',
-    mode: 'bus',
-    route: '32',
-  },
-];
+// Real arraybuffer data that was encoded into base64
+const arrayBuffer = converter.decode(
+  'Cg0KAzEuMBABGMa+6OQFEmgKBjEzMDIxMBAAIlwKKwoKNTY0NTkzNDY0NhIIMTQ6MzU6MDAaCDIwMTkwMzI2IAAqBTg2OTIxMAESFA1OCHZCFc1OvUEdKWNcQi1TCXM9KMW+6OQFMABCDwoGMTMwMjEwEgVBdGFsYQ==',
+);
 
 describe('gtfsRtParser', () => {
-  describe('parse', () => {
-    it('should parse the given arraybuffer', () => {
-      const parser = new GtfsRtParser(defaultAgency, bindings);
-      const result = parser.parse(data.arrayBuffer, defaultRoutes);
-      expect(result).to.not.equal(null);
-    });
-  });
+  describe('parseFeedMQTT', () => {
+    it('GTFS RT vehicle position data for a route with a topic full of data should be parsed correctly', () => {
+      const result = parseFeedMQTT(
+        bindings.FeedMessage.read,
+        arrayBuffer,
+        '/gtfsrt/vp/tampere////8/1/Atala/5645934646/123456/14:35/130210/61;23/47/62/47/8/',
+        'tampere',
+        'bus',
+      );
 
-  describe('parseFeed', () => {
-    it('should return null if no routes are tracked', () => {
-      const routes = [];
-      const result = parseFeed(data.json, defaultAgency, routes);
-      expect(result).to.equal(null);
-    });
-
-    it('should return null if no matching route is found', () => {
-      const routes = [
+      expect(result).to.deep.equal([
         {
-          gtfsId: '114',
+          id: 'tampere:130210',
+          route: 'tampere:8',
+          direction: 1,
+          tripStartTime: '1435',
+          operatingDay: '20190326',
           mode: 'bus',
-          route: '114',
+          next_stop: 'tampere:123456',
+          timestamp: 1553604421,
+          lat: 61.50812,
+          long: 23.66348,
+          heading: 55,
+          headsign: 'Atala',
+          tripId: 'tampere:5645934646',
+          geoHash: ['61;23', '47', '62', '47'],
+          shortName: '8',
         },
-      ];
-      const result = parseFeed(data.json, defaultAgency, routes);
-      expect(result).to.equal(null);
+      ]);
     });
 
-    it('should find the given route', () => {
-      const result = parseFeed(data.json, defaultAgency, defaultRoutes);
-      expect(result).to.have.lengthOf(5);
-    });
+    it('GTFS RT vehicle position data for a tram route should be parsed correctly', () => {
+      const result = parseFeedMQTT(
+        bindings.FeedMessage.read,
+        arrayBuffer,
+        '/gtfsrt/vp/tampere////15/0/Petsamo/5660364646/123456/14:30/TKL_23/61;23/47/62/47/15/',
+        'tampere',
+        'tram',
+      );
 
-    it('should find all the given routes', () => {
-      const routes = [
-        ...defaultRoutes,
+      expect(result).to.deep.equal([
         {
-          gtfsId: '5',
-          mode: 'bus',
-          route: '5',
+          id: 'tampere:TKL_23',
+          route: 'tampere:15',
+          direction: 0,
+          tripStartTime: '1430',
+          operatingDay: '20190326',
+          mode: 'tram',
+          next_stop: 'tampere:123456',
+          timestamp: 1553604421,
+          lat: 61.50812,
+          long: 23.66348,
+          heading: 55,
+          headsign: 'Petsamo',
+          tripId: 'tampere:5660364646',
+          geoHash: ['61;23', '47', '62', '47'],
+          shortName: '15',
         },
-      ];
-      const result = parseFeed(data.json, defaultAgency, routes);
-      expect(result).to.have.lengthOf(6);
+      ]);
     });
 
-    it('should return a valid message', () => {
-      const routes = [
+    it('GTFS RT vehicle position data for a topic with no directionId, startime, stopId, headsign or shortName', () => {
+      const result = parseFeedMQTT(
+        bindings.FeedMessage.read,
+        arrayBuffer,
+        '/gtfsrt/vp/tampere////15//////TKL_23/61;23/47/62/47/',
+        'tampere',
+        'bus',
+      );
+
+      expect(result).to.deep.equal([
         {
-          gtfsId: '5',
+          id: 'tampere:TKL_23',
+          route: 'tampere:15',
+          direction: undefined,
+          tripStartTime: undefined,
+          operatingDay: '20190326',
           mode: 'bus',
-          route: '5',
+          next_stop: undefined,
+          timestamp: 1553604421,
+          lat: 61.50812,
+          long: 23.66348,
+          heading: 55,
+          headsign: undefined,
+          tripId: undefined,
+          geoHash: ['61;23', '47', '62', '47'],
+          shortName: undefined,
         },
-      ];
-      const result = parseFeed(data.json, defaultAgency, routes)[0];
-      expect(result).to.deep.equal({
-        id: 'HSL:TKL_19',
-        route: 'HSL:5',
-        direction: 0,
-        tripStartTime: '131500',
-        operatingDay: '20181213',
-        mode: 'bus',
-        next_stop: '',
-        timestamp: 1544698447,
-        lat: 61.45803,
-        long: 23.84659,
-        heading: 0,
-      });
+      ]);
     });
   });
 });

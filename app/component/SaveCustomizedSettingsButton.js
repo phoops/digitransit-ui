@@ -13,6 +13,7 @@ import {
 import { getCurrentSettings, getDefaultSettings } from '../util/planParamUtil';
 import { getQuerySettings } from '../util/queryUtils';
 import { getDrawerWidth } from '../util/browser';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 class SaveCustomizedSettingsButton extends React.Component {
   static propTypes = {
@@ -22,7 +23,6 @@ class SaveCustomizedSettingsButton extends React.Component {
   static contextTypes = {
     config: PropTypes.object.isRequired,
     location: locationShape.isRequired,
-    piwik: PropTypes.object,
   };
 
   constructor(props) {
@@ -34,13 +34,12 @@ class SaveCustomizedSettingsButton extends React.Component {
   }
 
   setSettingsData = () => {
-    if (this.context.piwik != null) {
-      this.context.piwik.trackEvent(
-        'ItinerarySettings',
-        'SettingsPanelSaveSettingsButton',
-        'SaveSettings',
-      );
-    }
+    addAnalyticsEvent({
+      event: 'sendMatomoEvent',
+      category: 'ItinerarySettings',
+      action: 'SettingsPanelSaveSettingsButton',
+      name: 'SaveSettings',
+    });
 
     const querySettings = getQuerySettings(this.context.location.query);
     const customizedSettings = getCustomizedSettings();
@@ -55,6 +54,9 @@ class SaveCustomizedSettingsButton extends React.Component {
       isEqual(currentSettings, defaultSettings)
     ) {
       this.props.noSettingsFound();
+      this.setState({
+        open: true,
+      });
     } else {
       setCustomizedSettings(querySettings);
       this.setState({
@@ -96,7 +98,12 @@ class SaveCustomizedSettingsButton extends React.Component {
           }
           autoHideDuration={this.state.autoHideDuration}
           onRequestClose={this.handleRequestClose}
-          style={{ width: drawerWidth }}
+          style={{
+            width: drawerWidth,
+            transform: 'none',
+            left: 'auto',
+            right: '0px',
+          }}
           bodyStyle={{
             backgroundColor: '#585a5b',
             color: '#fff',

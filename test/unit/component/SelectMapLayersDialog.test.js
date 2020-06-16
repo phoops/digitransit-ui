@@ -5,7 +5,10 @@ import React from 'react';
 import { mountWithIntl } from '../helpers/mock-intl-enzyme';
 import { mockContext, mockChildContextTypes } from '../helpers/mock-context';
 
-import { Component as SelectMapLayersDialog } from '../../../app/component/SelectMapLayersDialog';
+import {
+  Component as SelectMapLayersDialog,
+  getGeoJsonLayersOrDefault,
+} from '../../../app/component/SelectMapLayersDialog';
 
 describe('<SelectMapLayersDialog />', () => {
   it('should render', () => {
@@ -25,6 +28,35 @@ describe('<SelectMapLayersDialog />', () => {
     expect(wrapper.find('.select-map-layers-dialog-content')).to.have.lengthOf(
       1,
     );
+  });
+
+  it('should update the vehicles layer', () => {
+    let mapLayers = {
+      showAllBusses: false,
+      stop: {},
+      terminal: {},
+      ticketSales: {},
+    };
+    const props = {
+      config: {
+        showAllBusses: true,
+      },
+      mapLayers,
+      updateMapLayers: layers => {
+        mapLayers = { ...layers };
+      },
+    };
+    const wrapper = mountWithIntl(<SelectMapLayersDialog isOpen {...props} />, {
+      context: { ...mockContext },
+      childContextTypes: { ...mockChildContextTypes },
+    });
+
+    wrapper
+      .find('.option-checkbox input')
+      .at(0)
+      .simulate('change', { target: { checked: true } });
+
+    expect(mapLayers.showAllBusses).to.equal(true);
   });
 
   it('should update the bus stop layer', () => {
@@ -342,5 +374,99 @@ describe('<SelectMapLayersDialog />', () => {
       .simulate('change', { target: { checked: true } });
     expect(mapLayers.ticketSales.salesPoint).to.equal(true);
     expect(mapLayers.ticketSales.servicePoint).to.equal(true);
+  });
+
+  it('should include geoJson layers', () => {
+    let mapLayers = {
+      terminal: {},
+      ticketSales: {},
+      stop: {},
+      geoJson: {
+        somejson: true,
+        morejson: false,
+      },
+    };
+    const props = {
+      config: {
+        geoJson: {
+          layers: [
+            {
+              name: {
+                fi: 'testi',
+                sv: 'test',
+                en: 'test',
+              },
+              url: 'somejson',
+            },
+            {
+              name: {
+                fi: 'nimi',
+                sv: 'namn',
+                en: 'name',
+              },
+              url: 'morejson',
+            },
+          ],
+        },
+      },
+      mapLayers,
+      updateMapLayers: layers => {
+        mapLayers = { ...layers };
+      },
+    };
+    const wrapper = mountWithIntl(<SelectMapLayersDialog isOpen {...props} />, {
+      context: { ...mockContext },
+      childContextTypes: { ...mockChildContextTypes },
+    });
+
+    const checkboxes = wrapper.find('.option-checkbox input');
+    expect(checkboxes.length).to.equal(2);
+
+    checkboxes.at(1).simulate('change', { target: { checked: true } });
+
+    expect(mapLayers.geoJson.morejson).to.equal(true);
+  });
+
+  describe('getGeoJsonLayersOrDefault', () => {
+    it('should return the layers from the configuration', () => {
+      const config = {
+        geoJson: {
+          layers: [
+            {
+              foo: 'bar',
+            },
+          ],
+        },
+      };
+      const store = { layers: undefined };
+      expect(getGeoJsonLayersOrDefault(config, store)).to.equal(
+        config.geoJson.layers,
+      );
+    });
+
+    it('should return the layers from the store', () => {
+      const config = {
+        geoJson: {
+          layerConfigUrl: 'foobar',
+        },
+      };
+      const store = {
+        layers: [
+          {
+            foo: 'bar',
+          },
+        ],
+      };
+      expect(getGeoJsonLayersOrDefault(config, store)).to.equal(store.layers);
+    });
+
+    it('should return the defaultValue', () => {
+      const config = {};
+      const store = {};
+      const defaultValue = [];
+      expect(getGeoJsonLayersOrDefault(config, store, defaultValue)).to.equal(
+        defaultValue,
+      );
+    });
   });
 });

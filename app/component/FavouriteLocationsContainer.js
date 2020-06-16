@@ -14,6 +14,7 @@ import ComponentUsageExample from './ComponentUsageExample';
 import NoFavouriteLocations from './NoFavouriteLocations';
 import { dtLocationShape } from '../util/shapes';
 import { isMobile } from '../util/browser';
+import { addAnalyticsEvent } from '../util/analyticsUtils';
 
 class FavouriteLocationContainerRoute extends Relay.Route {
   static queries = {
@@ -32,10 +33,12 @@ class FavouriteLocationContainerRoute extends Relay.Route {
       }
     }`,
   };
+
   static paramDefinitions = {
     from: { required: true },
     to: { required: true },
   };
+
   static routeName = 'FavouriteLocationsContainerRoute';
 }
 
@@ -81,28 +84,38 @@ export default class FavouriteLocationsContainer extends React.Component {
   };
 
   onPrev = () => {
-    const newSlideIndex = Math.max(
-      0,
-      this.state.slideIndex - FavouriteLocationsContainer.SLOTS_PER_CLICK,
-    );
-    this.setState({ slideIndex: newSlideIndex });
+    this.setState(prevState => {
+      const newSlideIndex = Math.max(
+        0,
+        prevState.slideIndex - FavouriteLocationsContainer.SLOTS_PER_CLICK,
+      );
+      return { slideIndex: newSlideIndex };
+    });
   };
 
   onNext = () => {
-    const newSlideIndex = Math.min(
-      this.state.slideIndex + FavouriteLocationsContainer.SLOTS_PER_CLICK,
-      this.props.favourites.length - 2,
-    );
-    this.setState({ slideIndex: newSlideIndex });
+    this.setState(prevState => {
+      const newSlideIndex = Math.min(
+        prevState.slideIndex + FavouriteLocationsContainer.SLOTS_PER_CLICK,
+        this.props.favourites.length - 2,
+      );
+      return { slideIndex: newSlideIndex };
+    });
   };
 
-  setDestination = (locationName, lat, lon) => {
+  setDestination = (name, lat, lon) => {
     const location = {
       lat,
       lon,
-      address: locationName,
+      address: name,
       ready: true,
     };
+
+    addAnalyticsEvent({
+      action: 'EditJourneyEndPoint',
+      category: 'ItinerarySettings',
+      name: 'FavouritePanel',
+    });
 
     navigateTo({
       origin: this.props.origin,
