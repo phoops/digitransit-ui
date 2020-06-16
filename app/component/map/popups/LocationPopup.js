@@ -39,7 +39,7 @@ class LocationPopup extends React.Component {
   }
 
   componentDidMount() {
-    const language = this.context.getStore('PreferencesStore').getLanguage();
+    const language = this.props.language
     const reverseGeocodingUrl = this.context.config.URL.MAPBOX
       + '/' + this.props.lon + ',' + this.props.lat + '.json?'
       + 'language=' + language
