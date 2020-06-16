@@ -358,7 +358,6 @@ class SummaryPlanContainer extends React.Component {
       $compactLegsByReversedSearch: Boolean!,
       $itineraryFiltering: Float!,
       $modeWeight: InputModeWeight!,
-      $allowedBikeRentalNetworks: [String]!,
       $locale: String!,
     ) { viewer {
         plan(
@@ -397,7 +396,6 @@ class SummaryPlanContainer extends React.Component {
           compactLegsByReversedSearch:$compactLegsByReversedSearch,
           itineraryFiltering: $itineraryFiltering,
           modeWeight: $modeWeight,
-          allowedBikeRentalNetworks: $allowedBikeRentalNetworks,
           locale: $locale,
         ) {itineraries {startTime,endTime}}
       }
