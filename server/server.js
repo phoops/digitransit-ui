@@ -405,7 +405,7 @@ setUpStaticFolders();
 setUpMiddleware();
 setUpRoutes();
 setUpErrorHandling();
-Promise.all([setUpAvailableRouteTimetables(), setUpAvailableTickets()]).then(
+Promise.all([setUpAvailableRouteTimetables()]).then(
   () => startServer(),
 );
 
