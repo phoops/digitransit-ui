@@ -476,9 +476,9 @@ function getRoutes(input, config) {
 
   const query = Relay.createQuery(
     Relay.QL`
-    query routes($feeds: [String!]!, $name: String) {
+    query routes($name: String) {
       viewer {
-        routes(feeds: $feeds, name: $name ) {
+        routes(name: $name ) {
           gtfsId
           agency {name}
           shortName

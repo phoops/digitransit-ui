@@ -21,10 +21,6 @@ export const AlertContentQuery = Relay.QL`
       language
       text
     }
-    alertUrlTranslations {
-      language
-      text
-    }
   }
 `;
 
