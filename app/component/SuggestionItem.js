@@ -31,13 +31,13 @@ const SuggestionItem = pure(
       );
     } else {
       // DT-3262 Icon as string for screen readers
-      const layer = item.properties.layer.replace('route-', '').toLowerCase();
-      if (intl) {
-        iconstr = intl.formatMessage({
-          id: layer,
-          defaultMessage: layer,
-        });
-      }
+      // const layer = item.properties.layer.replace('route-', '').toLowerCase();
+      // if (intl) {
+      //   iconstr = intl.formatMessage({
+      //     id: layer,
+      //     defaultMessage: layer,
+      //   });
+      // }
       icon = (
         <Icon
           img={getIcon(item.properties.layer)}
