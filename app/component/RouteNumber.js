@@ -122,7 +122,7 @@ function RouteNumber(props, context) {
         ) : (
           <div className="vehicle-number-container-v">
             <span
-              className={cx('vehicle-number', mode, textClass, {
+              className={cx('vehicle-number', mode, props.textClass, {
                 'overflow-fade': longText && props.fadeLong,
                 long: longText,
               })}
