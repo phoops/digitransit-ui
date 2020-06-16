@@ -9,6 +9,7 @@ const fr = require('./translations/fr.json');
 const nb = require('./translations/nb.json');
 const ro = require('./translations/ro.json');
 const sv = require('./translations/sv.json');
+const it = require('./translations/it.json');
 
 const translations = {
   da,
@@ -20,6 +21,7 @@ const translations = {
   nb,
   ro,
   sv,
+  it,
 };
 
 export default translations;
