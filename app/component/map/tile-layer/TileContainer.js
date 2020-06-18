@@ -90,17 +90,11 @@ class TileContainer {
     return el;
   };
 
-  onMapClick = (e, point) => {
+  onMapClick = (e, _point) => {
     let nearest;
     let features;
-    let localPoint;
 
     if (this.layers) {
-      localPoint = [
-        (point[0] * this.scaleratio) % this.tileSize,
-        (point[1] * this.scaleratio) % this.tileSize,
-      ];
-
       features = flatten(
         this.layers.map(
           layer =>
@@ -117,18 +111,17 @@ class TileContainer {
           return false;
         }
 
-        const g = feature.feature.geom;
-
-        const dist = Math.sqrt(
-          (localPoint[0] - g.x / this.ratio) ** 2 +
-            (localPoint[1] - g.y / this.ratio) ** 2,
-        );
-
-        if (dist < 22 * this.scaleratio) {
+        const { lat, lng } = e.latlng;
+        const dist = L.latLng(lat, lng).distanceTo(feature.feature.geom)
+        // dist is the distance in meter between a feature point on a tile
+        // and the clicked position on a tile
+        if (dist < 5) {
           return true;
         }
         return false;
       });
+
+      console.log("nearest", nearest)
 
       if (nearest.length === 0 && e.type === 'click') {
         // Must filter double clicks used for map navigation
@@ -150,7 +143,7 @@ class TileContainer {
       if (nearest.length === 1) {
         L.DomEvent.stopPropagation(e);
         // open menu for single stop
-        const latLon = L.latLng(this.project(nearest[0].feature.geom));
+        const latLon = L.latLng(nearest[0].feature.geom);
         return this.onSelectableTargetClicked(nearest, latLon, true);
       }
       L.DomEvent.stopPropagation(e);
