@@ -405,8 +405,6 @@ setUpStaticFolders();
 setUpMiddleware();
 setUpRoutes();
 setUpErrorHandling();
-Promise.all([setUpAvailableRouteTimetables()]).then(
-  () => startServer(),
-);
+Promise.all([setUpAvailableRouteTimetables()]).then(() => startServer());
 
 module.exports.app = app;

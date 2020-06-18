@@ -318,12 +318,8 @@ export function getGeocodingResult(
   );
 }
 
-export function getMapboxGeocodingResult(
-  _text,
-  focusPoint,
-  config
-) {
-  const text = _text ? _text : null;
+export function getMapboxGeocodingResult(_text, focusPoint, config) {
+  const text = _text || null;
   if (
     text === undefined ||
     text === null ||
@@ -341,17 +337,18 @@ export function getMapboxGeocodingResult(
     focusPoint.lon = config.defaultMapCenter.lon;
   }
   const opts = {
-    country: "it",
-    language: "it",
-    proximity: focusPoint.lon + "," + focusPoint.lat,
+    country: 'it',
+    language: 'it',
+    proximity: `${focusPoint.lon},${focusPoint.lat}`,
     bbox: config.MAPBOX_TUSCANY_BOUNDARIES,
     access_token: config.MAPBOX_ACCESS_TOKEN,
-  }
-  const urlMapbox = config.URL.MAPBOX + '/' + text + '.json?' + buildQueryString(opts);
-  return getJson(urlMapbox).then(response => 
+  };
+  const urlMapbox = `${config.URL.MAPBOX}/${text}.json?${buildQueryString(
+    opts,
+  )}`;
+  return getJson(urlMapbox).then(response =>
     mapboxToPeliasFeaturs(response.features),
   );
-
 }
 
 export function searchPlace(ids, config) {
@@ -874,11 +871,11 @@ export function reverseGeocode(opts, config) {
 }
 
 function buildQueryString(params) {
-  let queryString = "";
+  let queryString = '';
   for (const key in params) {
-      if (params.hasOwnProperty(key)) {
-          queryString += key + "=" + params[key] + "&";
-      }
+    if (params.hasOwnProperty(key)) {
+      queryString += `${key}=${params[key]}&`;
+    }
   }
 
   return encodeURI(queryString.slice(0, -1));

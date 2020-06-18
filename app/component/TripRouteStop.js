@@ -55,14 +55,10 @@ const TripRouteStop = props => {
     >
       <div className=" route-stop-now">{vehicles}</div>
       <div className={cx('route-stop-now_circleline', mode)}>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width={15}
-          height={30}
-        >
+        <svg xmlns="http://www.w3.org/2000/svg" width={15} height={30}>
           <circle
             strokeWidth="2"
-            stroke={'currentColor'}
+            stroke="currentColor"
             fill="white"
             cx="6"
             cy="13"

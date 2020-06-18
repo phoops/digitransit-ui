@@ -269,7 +269,7 @@ class TransitLeg extends React.Component {
               <RouteNumber //  shouldn't this be a route number container instead???
                 alertSeverityLevel={getActiveLegAlertSeverityLevel(leg)}
                 mode={mode.toLowerCase()}
-                color={'currentColor'}
+                color="currentColor"
                 text={leg.route && leg.route.shortName}
                 realtime={leg.realTime}
                 vertical
@@ -282,7 +282,7 @@ class TransitLeg extends React.Component {
         <ItineraryCircleLine
           index={index}
           modeClassName={modeClassName}
-          color={'currentColor'}
+          color="currentColor"
         />
         <div
           style={{
