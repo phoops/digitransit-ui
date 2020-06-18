@@ -1,7 +1,6 @@
 const CONFIG = 'mint';
 const API_URL = process.env.API_URL || 'https://dev-api.digitransit.fi';
-const MAP_URL =
-  process.env.MAP_URL || 'https://maps.wikimedia.org/osm-intl/';
+const MAP_URL = process.env.MAP_URL || 'https://maps.wikimedia.org/osm-intl/';
 const APP_DESCRIPTION = 'Muoversi In Toscana - Travel Planner';
 const YEAR = 1900 + new Date().getYear();
 const APP_PATH = process.env.APP_CONTEXT || '';
@@ -10,21 +9,24 @@ export default {
   CONFIG,
 
   URL: {
-    OTP: process.env.OTP_URL || `https://www-stg.muoversintoscana.it/gw/otp/routers/toscana/`,
+    OTP:
+      process.env.OTP_URL ||
+      `https://www-stg.muoversintoscana.it/gw/otp/routers/toscana/`,
     // STOP_MAP: `${MAP_URL}/map/v1/hsl-stop-map/`,
     // CITYBIKE_MAP: `${MAP_URL}/map/v1/hsl-citybike-map/`,
     // PARK_AND_RIDE_MAP: `${MAP_URL}/map/v1/hsl-parkandride-map/`,
     // TICKET_SALES_MAP: `${MAP_URL}/map/v1/hsl-ticket-sales-map/`,
     FONT: 'https://fonts.googleapis.com/css?family=Roboto|Roboto+Condensed',
     MAP: {
-      default: `${MAP_URL}`
+      default: `${MAP_URL}`,
     },
-    MAPBOX: 'https://api.mapbox.com/geocoding/v5/mapbox.places'
+    MAPBOX: 'https://api.mapbox.com/geocoding/v5/mapbox.places',
   },
 
   MAPBOX_TUSCANY_BOUNDARIES: '9.651662,42.424519,12.317661,44.499167',
 
-  MAPBOX_ACCESS_TOKEN: 'pk.eyJ1IjoicGhvb3BzLW1hcGJveCIsImEiOiJjamM2ZWtzdnExNG9pMnFxbWV4ZXpoNjZ5In0.65trvqRy8RINZocVaFZYJg',
+  MAPBOX_ACCESS_TOKEN:
+    'pk.eyJ1IjoicGhvb3BzLW1hcGJveCIsImEiOiJjamM2ZWtzdnExNG9pMnFxbWV4ZXpoNjZ5In0.65trvqRy8RINZocVaFZYJg',
 
   map: {
     useRetinaTiles: true,
@@ -49,7 +51,21 @@ export default {
   // Navbar logo
   logo: 'mint/mint-dark.png',
 
-  feedIds: ['1','2','3','4','5','6','7','8','9','10', 'CTT','CAP','COPIT'],
+  feedIds: [
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    '10',
+    'CTT',
+    'CAP',
+    'COPIT',
+  ],
 
   showHSLTracking: false,
 
@@ -86,7 +102,10 @@ export default {
 
   sprites: 'svg-sprite.mint.svg',
 
-  appBarLink: { name: 'Regione Toscana', href: 'http://www.regione.toscana.it/' },
+  appBarLink: {
+    name: 'Regione Toscana',
+    href: 'http://www.regione.toscana.it/',
+  },
 
   // nationalServiceLink: { name: 'Regione Toscana', href: 'http://www.regione.toscana.it/' },
 
@@ -150,7 +169,7 @@ export default {
   },
 
   modesWithNoBike: ['BUS', 'TRAM'],
-  
+
   useSearchPolygon: false,
 
   areaPolygon: [
@@ -225,17 +244,18 @@ export default {
       {
         name: 'accessibility',
         nameEn: 'Accessibility',
-        href: 'http://www.regione.toscana.it/accessibilita'
+        href: 'http://www.regione.toscana.it/accessibilita',
       },
       {
         name: 'legal-notes',
         nameEn: 'Legal notes',
-        href: 'http://www.regione.toscana.it/notelegali'
+        href: 'http://www.regione.toscana.it/notelegali',
       },
       {
         name: 'transparent-administration',
         nameEn: 'Transparent administration',
-        href: 'http://www.regione.toscana.it/regione/amministrazione-trasparente',
+        href:
+          'http://www.regione.toscana.it/regione/amministrazione-trasparente',
       },
       {
         name: 'legal-advertising',
@@ -255,13 +275,9 @@ export default {
     ],
   },
 
-  defaultEndpoint: {
-    
-  },
+  defaultEndpoint: {},
 
-  defaultOrigins: [
-    
-  ],
+  defaultOrigins: [],
 
   redirectReittiopasParams: true,
   queryMaxAgeDays: 14, // to drop too old route request times from entry url
@@ -332,9 +348,7 @@ export default {
   ticketLink: 'https://www.hsl.fi/liput-ja-hinnat',
   showTicketSelector: false,
 
-  fares: [
-    
-  ],
+  fares: [],
 
   // mapping (string, lang) from OTP fare identifiers to human readable form
   fareMapping: function mapHslFareId(fareId, lang) {
@@ -425,8 +439,7 @@ export default {
   // staticMessagesUrl: 'https://www.muoversintoscana.it/news/',
   mapLayers: {
     featureMapping: {
-      ticketSales: {
-      },
+      ticketSales: {},
     },
   },
 };

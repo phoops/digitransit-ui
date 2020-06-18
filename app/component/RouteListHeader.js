@@ -10,9 +10,7 @@ const RouteListHeader = ({ displayNextDeparture, className }) => (
       className,
     )}
   >
-    <div className="route-stop-now">
-      
-    </div>
+    <div className="route-stop-now" />
     <div className="route-stop-name">
       <FormattedMessage id="stop" defaultMessage="Stop" />
     </div>

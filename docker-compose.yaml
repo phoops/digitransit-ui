@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+    mint_ui:
+        build:
+            context: .
+            dockerfile: Dev.dockerfile
+        volumes:
+            - ".:/app"
+            - "node_modules:/app/node_modules"
+        ports:
+            - "8080:8080"
+            - "9000:9000"
+volumes:
+    node_modules:

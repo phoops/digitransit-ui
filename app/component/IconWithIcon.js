@@ -28,11 +28,7 @@ const IconWithIcon = (
 ) => (
   <span style={{ position: 'relative' }} id={id} className={className}>
     <span>
-      <Icon
-        badgeFill={badgeFill}
-        badgeText={badgeText}
-        img={img}
-      />
+      <Icon badgeFill={badgeFill} badgeText={badgeText} img={img} />
     </span>
     {subIcon && (
       <span

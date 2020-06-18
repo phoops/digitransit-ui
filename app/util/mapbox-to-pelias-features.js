@@ -1,8 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-
-export default (mapboxFeatures) => {
-
+export default mapboxFeatures => {
   // const mapping = config.search.peliasMapping;
   return mapboxFeatures.map(feature => {
     const mappedFeature = { ...feature };
@@ -26,15 +24,15 @@ export default (mapboxFeatures) => {
     //   return config.search.peliasLocalization(mappedFeature);
     // }
     let label = '';
-      if (feature.address) {
-          label = feature.text + " " + feature.address + ", " + feature.context[1].text;
-      } else {
-          label = feature.place_name;
-      }
-    
+    if (feature.address) {
+      label = `${feature.text} ${feature.address}, ${feature.context[1].text}`;
+    } else {
+      label = feature.place_name;
+    }
+
     mappedFeature.properties.label = label;
-    mappedFeature.geometry.coordinates[0] = feature.geometry.coordinates[0]
-    mappedFeature.geometry.coordinates[1] = feature.geometry.coordinates[1]
+    mappedFeature.geometry.coordinates[0] = feature.geometry.coordinates[0];
+    mappedFeature.geometry.coordinates[1] = feature.geometry.coordinates[1];
 
     // TODO: check Pelias feature format and return it
     return mappedFeature;

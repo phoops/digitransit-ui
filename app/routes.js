@@ -181,12 +181,13 @@ export default config => {
         }}
       />
       {/* For all the rest render 404 */}
-      <Route 
+      <Route
         path="*"
         components={{
           title: Title,
           content: SummaryPageWrapper,
-        }} />
+        }}
+      />
     </Route>
   );
 };
