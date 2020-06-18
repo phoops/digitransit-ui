@@ -3,15 +3,15 @@ import React from 'react';
 
 import TileLayerContainer from './TileLayerContainer';
 import CityBikes from './CityBikes';
-import Stops from './Stops';
 import ParkAndRide from './ParkAndRide';
 import TicketSales from './TicketSales';
+import MintStops from './MintStops';
 
 export default function VectorTileLayerContainer(props, { config }) {
   const layers = [];
 
   if (props.showStops) {
-    layers.push(Stops);
+    layers.push(MintStops);
 
     if (config.cityBike && config.cityBike.showCityBikes) {
       layers.push(CityBikes);
