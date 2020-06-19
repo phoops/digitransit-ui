@@ -86,7 +86,7 @@ class MintStops {
     }
     console.log("Stop coordinates", feature.geom)
     console.log("Tile coordinates", this.tile.coords)
-    circle(feature.geom, { radius: 4 }).addTo(this.tile.props.leaflet.map);
+    // circle(feature.geom, { radius: 4 }).addTo(this.tile.props.leaflet.map);
 
     // if (feature.properties.type === 'FERRY') {
     //   drawTerminalIcon(
