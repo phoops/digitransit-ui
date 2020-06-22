@@ -115,7 +115,7 @@ class TileContainer {
         const dist = L.latLng(lat, lng).distanceTo(feature.feature.geom)
         // dist is the distance in meter between a feature point on a tile
         // and the clicked position on a tile
-        if (dist < 10) {
+        if (dist < 20) {
           return true;
         }
         return false;

@@ -3,7 +3,7 @@ import Protobuf from 'pbf';
 import pick from 'lodash/pick';
 import Relay from 'react-relay/classic';
 
-import { circle } from 'leaflet';
+import { circle, LatLng, latLng } from 'leaflet';
 import { StopAlertsQuery } from '../../../util/alertQueries';
 import { getActiveAlertSeverityLevel } from '../../../util/alertUtils';
 import {
@@ -84,9 +84,11 @@ class MintStops {
     ) {
       return;
     }
-    console.log("Stop coordinates", feature.geom)
-    console.log("Tile coordinates", this.tile.coords)
-    // circle(feature.geom, { radius: 4 }).addTo(this.tile.props.leaflet.map);
+    console.log('Stop coordinates', feature.geom);
+    console.log('Tile coordinates', this.tile.coords);
+    // this.getTileBoundingBox(this.tile, this.tile.coords.z);
+
+    circle(feature.geom, { radius: 4 }).addTo(this.tile.props.leaflet.map);
 
     // if (feature.properties.type === 'FERRY') {
     //   drawTerminalIcon(
@@ -174,38 +176,138 @@ class MintStops {
     }
   };
 
+  getTileBoundingBox(tile, zoom) {
+    const x = tile.coords.x;
+    const y = tile.coords.y;
+    function tile2lon(x, z) {
+      return x / Math.pow(2, z) * 360 - 180;
+    }
+    function tile2lat(y, z) {
+      const n = Math.PI - 2 * Math.PI * y / Math.pow(2, z);
+      return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+    }
+
+    const north = tile2lat(y, zoom);
+    const south = tile2lat(y + 1, zoom);
+    const west = tile2lon(x, zoom);
+    const east = tile2lon(x + 1, zoom);
+
+    return {
+      minLat: north,
+      minLon: west,
+      maxLat: south,
+      maxLon: east,
+    };
+    // // const { lon, lat} = tile.project(tile.coords)
+    // // console.log("tile", tile.coords, lon, lat)
+    // console.log(
+    //   'custom tile coordis',
+    //   north,
+    //   west,
+    //   south,
+    //   east
+    // );
+  }
+
   getPromise() {
-    return fetch(
-      `${this.config.URL.STOP_MAP}${this.tile.coords.z +
-        (this.tile.props.zoomOffset || 0)}` +
-        `/${this.tile.coords.x}/${this.tile.coords.y}.pbf`,
-    ).then(res => {
+    const byBoundingBox = this.getTileBoundingBox(
+      this.tile,
+      this.tile.coords.z,
+    );
+    const poiUrl = new URL(
+      'https://www-stg.muoversintoscana.it/gw/sabrina/api/v1/pois/byBoundingBox',
+    );
+    poiUrl.search = new URLSearchParams({
+      ...byBoundingBox,
+      types: 'bus-stop,rail-stop,tram-stop',
+    });
+    // console.log('request URL', poiUrl.toString());
+    if (this.tile.coords.z <= this.config.stopsMinZoom) {
+      console.log('request skipped', this.tile.coords.z);
+      // clear markers if present
+      const leafletMap = this.tile.props.leaflet.map;
+      if (leafletMap._layers.length != 0) {
+        console.log("cleaning markers")
+        this.clearStops()
+      }
+      return;
+    }
+    return fetch(poiUrl.toString()).then(res => {
       if (res.status !== 200) {
         return undefined;
       }
 
-      return res.arrayBuffer().then(
-        buf => {
+      return res.json().then(
+        json => {
           // Mocked stops json
 
           // old implementation
           //   const vt = new VectorTile(new Protobuf(buf));
-
+          // layers: {
+          //   stops: [
+          //     {
+          //       geom: {
+          //         lng: 11.220277,
+          //         lat: 43.790988,
+          //       },
+          //       properties: {
+          //         gtfsId: 'ATAF:2464',
+          //         name: 'MICCINESI',
+          //         code: 'FM1029',
+          //         platform: 'null',
+          //         desc: 'Fermata miccinesi',
+          //         parentStation: 'null',
+          //         type: 'BUS',
+          //         patterns: '[{"headsign":"Merikatu","type":"BUS","shortName":"24"}]',
+          //       },
+          //     },
+          //   ],
+          // },
+          // skip empty response
+          if (!json.data || json.data.length === 0) {
+            console.log('empty result skipping', json);
+            return;
+          }
+          const stopsForLayers = {
+            layers: {
+              stops: json.data.map(poi => ({
+                geom: {
+                  lng: poi.position.lon,
+                  lat: poi.position.lat,
+                },
+                properties: {
+                  gtfsId: poi.additionalData.gtfsId,
+                  name: poi.additionalData.name,
+                  code: poi.additionalData.code,
+                  platform: null,
+                  desc: `Fermata ${poi.additionalData.name}`,
+                  parentStation: null,
+                  type: poi.additionalData.routeType,
+                  patterns: JSON.stringify([{
+                    headsign: poi.additionalData.name,
+                    shortName: poi.additionalData.name,
+                    type: poi.additionalData.routeType,
+                  }]),
+                },
+              })),
+            },
+          };
+          console.log('Stops from rest', stopsForLayers);
           this.features = [];
 
           if (
-            mockedStops.layers.stops != null &&
+            stopsForLayers.layers.stops != null &&
             this.tile.coords.z >= this.config.stopsMinZoom
           ) {
             const featureByCode = {};
 
             for (
-              let i = 0, ref = mockedStops.layers.stops.length - 1;
+              let i = 0, ref = stopsForLayers.layers.stops.length - 1;
               i <= ref;
               i++
             ) {
-              //   const feature = mockedStops.layers.stops.feature(i);
-              const feature = mockedStops.layers.stops[i];
+              //   const feature = stopsForLayers.layers.stops.feature(i);
+              const feature = stopsForLayers.layers.stops[i];
               if (
                 feature.properties.type &&
                 (feature.properties.parentStation === 'null' ||
@@ -271,17 +373,17 @@ class MintStops {
           }
 
           if (
-            mockedStops.layers.stations != null &&
+            stopsForLayers.layers.stations != null &&
             this.config.terminalStopsMaxZoom >
               this.tile.coords.z + (this.tile.props.zoomOffset || 0) &&
             this.tile.coords.z >= this.config.terminalStopsMinZoom
           ) {
             for (
-              let i = 0, ref = mockedStops.layers.stations.length - 1;
+              let i = 0, ref = stopsForLayers.layers.stations.length - 1;
               i <= ref;
               i++
             ) {
-              const feature = mockedStops.layers.stations.feature(i);
+              const feature = stopsForLayers.layers.stations.feature(i);
               if (
                 feature.properties.type &&
                 isFeatureLayerEnabled(

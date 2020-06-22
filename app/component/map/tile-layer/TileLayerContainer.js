@@ -226,6 +226,7 @@ class TileLayerContainer extends GridLayer {
               currentTime: this.state.currentTime,
             })
       }
+      forceFetch
       renderLoading={this.state.showSpinner ? this.loadingPopup : undefined}
       renderFetched={data => <StopMarkerPopup {...data} />}
     />

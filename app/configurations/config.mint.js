@@ -1,12 +1,13 @@
 const CONFIG = 'mint';
 const API_URL = process.env.API_URL || 'https://dev-api.digitransit.fi';
-const MAP_URL = process.env.MAP_URL || 'https://maps.wikimedia.org/osm-intl/';
+const MAP_URL = process.env.MAP_URL || 'http://localhost:5000/';
 const APP_DESCRIPTION = 'Muoversi In Toscana - Travel Planner';
 const YEAR = 1900 + new Date().getYear();
 const APP_PATH = process.env.APP_CONTEXT || '';
 
 export default {
   CONFIG,
+  PORT: 80,
 
   URL: {
     OTP:
