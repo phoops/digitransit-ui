@@ -165,6 +165,7 @@ function getContent(context, renderProps, locale, userAgent, req) {
       </ContextProvider>
     </BreakpointProvider>,
   );
+  console.log("in get content", context)
   return `<div id="app" data-initial-breakpoint="${breakpoint}">${content}</div>\n`;
 }
 
@@ -385,14 +386,14 @@ export default function(req, res, next) {
     res.write('<body>\n');
 
     if (process.env.NODE_ENV !== 'development') {
-      res.write('<script>\n');
-      res.write(`fetch('${ASSET_URL}/${assets[spriteName]}')
-        .then(function(response) {return response.text();}).then(function(blob) {
-          var div = document.createElement('div');
-          div.innerHTML = blob;
-          document.body.insertBefore(div, document.body.childNodes[0]);
-        });`);
-      res.write('</script>\n');
+      // res.write('<script>\n');
+      // res.write(`fetch('${ASSET_URL}/${assets[spriteName]}')
+      //   .then(function(response) {return response.text();}).then(function(blob) {
+      //     var div = document.createElement('div');
+      //     div.innerHTML = blob;
+      //     document.body.insertBefore(div, document.body.childNodes[0]);
+      //   });`);
+      // res.write('</script>\n');
     } else {
       res.write('<div>\n');
       res.write(fs.readFileSync(`${appRoot}_static/${spriteName}`).toString());
