@@ -100,7 +100,7 @@ export default {
     primary: '#E2001A',
   },
 
-  sprites: 'svg-sprite.mint.svg',
+  sprites: 'assets/svg-sprite.mint.svg',
 
   appBarLink: {
     name: 'Regione Toscana',
