@@ -165,7 +165,6 @@ function getContent(context, renderProps, locale, userAgent, req) {
       </ContextProvider>
     </BreakpointProvider>,
   );
-  console.log("in get content", context)
   return `<div id="app" data-initial-breakpoint="${breakpoint}">${content}</div>\n`;
 }
 
@@ -386,9 +385,13 @@ export default function(req, res, next) {
     res.write('<body>\n');
 
     if (process.env.NODE_ENV !== 'development') {
-      if (spriteName) {
+      let computedSpriteName = spriteName
+      if (spriteName && !spriteName.includes("assets")) {
+        computedSpriteName = "assets/" + spriteName
+      }
+      if (computedSpriteName && computedSpriteName != "undefined" && assets[computedSpriteName]) {
         res.write('<script>\n');
-        res.write(`fetch('${ASSET_URL}/${assets[spriteName]}')
+        res.write(`fetch('${ASSET_URL}/${assets[computedSpriteName]}')
           .then(function(response) {return response.text();}).then(function(blob) {
             var div = document.createElement('div');
             div.innerHTML = blob;
