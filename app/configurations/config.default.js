@@ -200,7 +200,7 @@ export default {
   },
 
   map: {
-    useRetinaTiles: true,
+    useRetinaTiles: false,
     tileSize: 512,
     zoomOffset: -1,
     minZoom: 1,

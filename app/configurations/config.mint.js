@@ -29,7 +29,7 @@ export default {
     'pk.eyJ1IjoicGhvb3BzLW1hcGJveCIsImEiOiJjamM2ZWtzdnExNG9pMnFxbWV4ZXpoNjZ5In0.65trvqRy8RINZocVaFZYJg',
 
   map: {
-    useRetinaTiles: true,
+    useRetinaTiles: false,
     tileSize: 256,
     zoomOffset: 0,
   },
